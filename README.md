@@ -37,8 +37,10 @@ several leagues, pin one with `CHULETA_LEAGUE=<id>`.
 
 ## Game mechanics the tool relies on
 
-Values update daily at 00:15 (Madrid); auctions resolve at 15:24. A bid must be
-at least the player's current value. The machine offers 90-110% of value on
+Values update daily at 00:15 (Madrid). Auctions and machine offers resolve once
+a day at a time that depends on when YOUR league was created (every league has
+its own cycle; the exact instant is each listing's `expirationDate`). A bid must
+be at least the player's current value. The machine offers 90-110% of value on
 every listing each cycle, whatever you ask. The XI saved before the first match
 of a gameweek scores for the whole gameweek. A clause floors at market value
 while locked; raising it costs 50% of the increment. The maximum bid is cash
