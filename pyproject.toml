@@ -1,0 +1,30 @@
+[project]
+name = "chuleta"
+version = "0.1.0"
+description = "Trading desk for LALIGA Fantasy: market screening with vetoes, expected-points lineups, rival cash, clause radar"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "Francisco Barón" }]
+keywords = ["laliga", "fantasy", "football", "market", "cli"]
+dependencies = []
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Environment :: Console",
+  "Topic :: Games/Entertainment",
+]
+
+[project.urls]
+Repository = "https://github.com/Keralin/chuleta"
+
+[project.scripts]
+chuleta = "chuleta.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["chuleta*"]

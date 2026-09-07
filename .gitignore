@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+tokens.json
+pkce.json
+research/data/matches_*.json
+research/data/comps.json
