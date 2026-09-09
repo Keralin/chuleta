@@ -1,7 +1,7 @@
 [project]
 name = "chuleta"
 version = "0.1.0"
-description = "Trading desk for LALIGA Fantasy: market screening with vetoes, expected-points lineups, rival cash, clause radar"
+description = "Market assistant for LALIGA Fantasy: screening with vetoes, expected-points lineups, rival cash, clause radar, sniper"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.11"

@@ -2,7 +2,7 @@
 
 # Chuleta 📋⚽
 
-Una mesa de trading para el **LALIGA Fantasy** oficial, desde la terminal.
+Tu chuleta para el mercado del **LALIGA Fantasy** oficial, desde la terminal.
 Lee la API del juego (no oficial) y futbolfantasy.com y te dice, con los datos
 sobre la mesa, qué comprar, qué vender, a quién alinear y cuánta caja tienen de
 verdad tus rivales.
@@ -112,7 +112,7 @@ a golpe de puja real 🍺
 
 ## English
 
-Chuleta is a command-line trading desk for the official **LALIGA Fantasy**
+Chuleta is a command-line market assistant for the official **LALIGA Fantasy**
 game. It reads the game's (unofficial) API and futbolfantasy.com and tells
 you, with the data on the table, what to buy, what to sell, who to line up
 and how much cash your rivals really have. Standard library only, Python

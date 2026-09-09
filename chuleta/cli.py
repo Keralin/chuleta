@@ -278,7 +278,7 @@ def cmd_sniper(a):
 
 def main(argv=None):
     from . import __version__
-    ap = argparse.ArgumentParser(prog="chuleta", description="Trading desk para LALIGA Fantasy")
+    ap = argparse.ArgumentParser(prog="chuleta", description="Tu chuleta para el mercado de LALIGA Fantasy")
     ap.add_argument("--version", action="version", version=f"chuleta {__version__}")
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("login", help="iniciar sesión (dos pasos)"); s.add_argument("redirect", nargs="?"); s.set_defaults(f=cmd_login)
