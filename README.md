@@ -1,6 +1,6 @@
 <p align="center"><img src="assets/wordmark.svg" alt="Chuleta" width="560"></p>
 
-# Chuleta
+# Chuleta 📋⚽
 
 Una mesa de trading para el **LALIGA Fantasy** oficial, desde la terminal.
 Lee la API del juego (no oficial) y futbolfantasy.com y te dice, con los datos
@@ -9,7 +9,7 @@ verdad tus rivales.
 
 Solo librería estándar de Python (3.11+). Licencia MIT.
 
-## Qué hace
+## Qué hace 🔍
 
 | Comando | Qué te da |
 |---|---|
@@ -24,7 +24,7 @@ Solo librería estándar de Python (3.11+). Licencia MIT.
 | `chuleta sniper armar <marketId> <tope>` / `ver` / `limpiar` / `ejecutar` / `cron` | Francotirador fantasma: puja en los últimos segundos (valor + 10 si nadie puja; tu tope en el último minuto si hay rivales). `cron` lee la hora del ciclo de tu liga y te da la línea de crontab. |
 | `chuleta listar <nombre> <precio>` / `retirar` / `acepta --si` / `puja <marketId>` | Actuar. Aceptar una oferta es irreversible y pide confirmación con `--si`. |
 
-## Empezar
+## Empezar 🚀
 
 ```bash
 uv tool install git+https://github.com/Keralin/chuleta   # o: pipx install git+https://github.com/Keralin/chuleta
@@ -38,7 +38,7 @@ chuleta alinear
 La sesión y la caché viven en `~/.chuleta` (cámbialo con `CHULETA_HOME`). Si
 tienes varias ligas, fija una con `CHULETA_LEAGUE=<id>`.
 
-## Ejemplo
+## Ejemplo 👀
 
 `chuleta mercado` un miércoles cualquiera (los mánagers de la liga van anonimizados):
 
@@ -88,7 +88,7 @@ mientras está bloqueada; subirla cuesta el 50% del incremento. La puja máxima 
 la caja más el 20% del valor de la plantilla, y un saldo negativo al empezar la
 jornada puntúa cero. Cada mánager cobra 100.000 € por punto de jornada.
 
-## Lo que dicen los datos
+## Lo que dicen los datos 📊
 
 `research/` guarda los scrapers y las conclusiones de tres temporadas de puntos
 por jugador y partido (2023/24 a 2025/26): ganar vale 7,1 puntos por titular,
@@ -97,11 +97,16 @@ y un backtest cruzado enseña por qué el modelo de alineación pondera el rival
 un cuarto de su efecto medido. Los datos raspados no se redistribuyen; los
 scrapers sí.
 
-## Créditos
+## Gracias
 
-La idea de manejar LALIGA Fantasy desde una CLI, y el mapa de su login y sus
-endpoints, se exploraron primero en [jonortega20/fantasybot](https://github.com/jonortega20/fantasybot).
-Chuleta es una implementación independiente.
+A Jon Ortega y su [fantasybot](https://github.com/jonortega20/fantasybot): fue
+la chispa para meternos con LALIGA Fantasy desde la terminal y la referencia
+para entender cómo se habla con el juego. Chuleta creció a partir de esa idea
+hacia el lado del mercado: los flips, los vetos, la caja de los rivales y el
+francotirador. Si te gusta esto, pásate también por su repo.
+
+Y a La liga friki, los cuatro colegas con los que se ha probado cada comando
+a golpe de puja real 🍺
 
 ---
 
@@ -141,3 +146,7 @@ plus 20% of squad value; a negative balance at kick-off scores zero; every
 manager earns 100,000 EUR per gameweek point. See `research/README.md` for the
 three-season study behind the lineup model. Reports are in Spanish; code and
 comments in English.
+
+Thanks to Jon Ortega and his [fantasybot](https://github.com/jonortega20/fantasybot),
+the spark for driving LALIGA Fantasy from a terminal; Chuleta grew from that
+idea towards the market side of the game.
