@@ -40,7 +40,7 @@ tienes varias ligas, fija una con `CHULETA_LEAGUE=<id>`.
 
 ## Ejemplo 👀
 
-`chuleta mercado` un miércoles cualquiera (los mánagers de la liga van anonimizados):
+`chuleta mercado` un miércoles cualquiera:
 
 ```
 JUGADOR         POS EQUIPO          VENDE          ENTRADA   TEND/D  PROY% 25/26 PJ  MIN MEDIA PROB  VEREDICTO
