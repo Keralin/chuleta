@@ -105,9 +105,6 @@ para entender cómo se habla con el juego. Chuleta creció a partir de esa idea
 hacia el lado del mercado: los flips, los vetos, la caja de los rivales y el
 francotirador. Si te gusta esto, pásate también por su repo.
 
-Y a La liga friki, los cuatro colegas con los que se ha probado cada comando
-a golpe de puja real 🍺
-
 ---
 
 ## English
