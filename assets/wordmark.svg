@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 200" width="760" height="200" role="img" aria-label="Chuleta">
+  <defs>
+    <linearGradient id="pitch" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f7a3f"/>
+      <stop offset="1" stop-color="#145a2e"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(16 16) scale(0.66)">
+    <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#pitch)"/>
+    <g fill="#ffffff" opacity="0.06">
+      <rect x="8" y="56" width="240" height="24"/><rect x="8" y="104" width="240" height="24"/>
+      <rect x="8" y="152" width="240" height="24"/><rect x="8" y="200" width="240" height="24"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3">
+      <line x1="8" y1="128" x2="248" y2="128"/><circle cx="128" cy="128" r="34"/>
+    </g>
+    <g transform="rotate(-8 128 128)">
+      <path d="M70 62 h96 l30 30 v102 a10 10 0 0 1 -10 10 h-116 a10 10 0 0 1 -10 -10 v-122 a10 10 0 0 1 10 -10 z" fill="#fff8e7"/>
+      <path d="M166 62 v30 h30 z" fill="#e6d7b5"/>
+      <g stroke="#c9b892" stroke-width="3" stroke-linecap="round">
+        <line x1="86" y1="112" x2="140" y2="112"/><line x1="86" y1="134" x2="170" y2="134"/><line x1="86" y1="156" x2="126" y2="156"/>
+      </g>
+      <polyline points="86,182 112,166 130,174 154,148 176,140" fill="none" stroke="#1f7a3f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M166 132 l18 6 l-6 18 z" fill="#1f7a3f"/>
+    </g>
+  </g>
+  <text x="212" y="118" font-family="Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="96" font-weight="700" fill="#1f7a3f" letter-spacing="-2">Chuleta</text>
+  <text x="216" y="160" font-family="Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="26" font-weight="500" fill="#5b6b60" letter-spacing="1">MESA DE TRADING PARA LALIGA FANTASY</text>
+</svg>

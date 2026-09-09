@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/wordmark.svg" alt="Chuleta" width="560"></p>
+
 # Chuleta
 
 Una mesa de trading para el **LALIGA Fantasy** oficial, desde la terminal.
