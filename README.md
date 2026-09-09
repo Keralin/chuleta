@@ -45,10 +45,10 @@ tienes varias ligas, fija una con `CHULETA_LEAGUE=<id>`.
 ```
 JUGADOR         POS EQUIPO          VENDE          ENTRADA   TEND/D  PROY% 25/26 PJ  MIN MEDIA PROB  VEREDICTO
 --------------------------------------------------------------------------------------------------------
-Y. Zabiri       DEL R. Racing Club  Manager1      8,150,924 +364,713  +18.3     ?  4  206   5.5  80%  compra
-Rafita          DEF Málaga CF       Manager1      6,414,914  +96,923   +4.2     ?  4  337   4.2  70%  neutro
+Y. Zabiri       DEL R. Racing Club  Manager1     8,150,924 +364,713  +18.3     ?  4  206   5.5  80%  compra
+Rafita          DEF Málaga CF       Manager1     6,414,914  +96,923   +4.2     ?  4  337   4.2  70%  neutro
 Berenguer       DEL Athletic Club   Manager2    14,953,750 +244,498  -28.2   148  4  234   4.5  50%  neutro
-Moi Gómez       MED C.A. Osasuna    Manager1      3,850,301 +220,425  +24.2   104  4  240   6.5   0%  VETO: estado injured; noticia 2026-09-08: Parte médico oficial de Moi Gómez y periodo estimado de baja; noticia 2026-09-07: Moi Gómez se someterá a pruebas este martes y apunta a baja ante el Es
+Moi Gómez       MED C.A. Osasuna    Manager1     3,850,301 +220,425  +24.2   104  4  240   6.5   0%  VETO: estado injured; noticia 2026-09-08: Parte médico oficial de Moi Gómez y periodo estimado de baja; noticia 2026-09-07: Moi Gómez se someterá a pruebas este martes y apunta a baja ante el Es
 Jon Martin      DEF Real Sociedad   SISTEMA     27,469,625 +207,209   -0.8   112  5  366   3.2   0%  VETO: estado suspended; noticia 2026-09-07: Jon Martín es expulsado en el Martínez Valero y se pierde la jornada 5
 Suazo           DEF Sevilla FC      SISTEMA      4,307,631  -44,714   -8.4    94  4  360   2.0  80%  VETO: cayendo fuerte
 Iñigo           DEF R. Racing Club  SISTEMA        539,237   -5,749   -9.0     ?  4    0   0.0    ?  VETO: cayendo fuerte
