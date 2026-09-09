@@ -19,6 +19,7 @@ Solo librería estándar de Python (3.11+). Licencia MIT.
 | `chuleta trading` | Cartera con beneficio latente, ventas realizadas, anuncios y ofertas de la máquina de hoy. |
 | `chuleta historial <nombre>` | Curva de valor día a día y puntos por jornada. |
 | `chuleta onces <club>` / `chuleta noticias <club>` | Once probable de la prensa y titulares tipados (lesión, traspaso, no disponible). |
+| `chuleta sniper armar <marketId> <tope>` / `ver` / `limpiar` / `ejecutar` / `cron` | Francotirador fantasma: puja en los últimos segundos (valor + 10 si nadie puja; tu tope en el último minuto si hay rivales). `cron` lee la hora del ciclo de tu liga y te da la línea de crontab. |
 | `chuleta listar <nombre> <precio>` / `retirar` / `acepta --si` / `puja <marketId>` | Actuar. Aceptar una oferta es irreversible y pide confirmación con `--si`. |
 
 ## Empezar
@@ -84,6 +85,9 @@ and how much cash your rivals really have. Standard library only, Python
 - `chuleta caja`, `clausulas`, `trading`, `historial`, `onces`, `noticias`:
   rival cash from the activity feed, clause exposure and targets, ledger, value
   curves, probable XIs, typed headlines.
+- `chuleta sniper armar|ver|limpiar|ejecutar|cron`: ghost-mode sniper that bids
+  in the last seconds (value + 10 alone, your cap in the last minute when
+  contested); `cron` reads your league's cycle time and prints the crontab line.
 - `chuleta listar` / `retirar` / `acepta --si` / `puja`: act; accepting an
   offer is irreversible and asks for `--si`.
 

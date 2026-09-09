@@ -14,7 +14,7 @@ from .sources.clubs import club_names
 from .sources.last_season import last_season_points
 from .sources.news import team_news
 from .sources.press import club_lineup
-from .strategy import cash, clauses, lineup, scout, vacancies
+from .strategy import cash, clauses, lineup, scout, sniper, vacancies
 
 
 def _json(obj):
@@ -255,6 +255,27 @@ def cmd_puja(a):
     print(f"{'Oferta' if e.get('playerTeam') else 'Puja'} de {money:,} por {e['playerMaster']['nickname']} registrada ({str(r)[:60]}).")
 
 
+def cmd_sniper(a):
+    if a.accion == "armar":
+        plan = sniper.arm(a.market_id, a.tope)
+        print("Plan: " + ", ".join(f"{t['market_id']} tope {t['cap']:,}" for t in plan))
+    elif a.accion == "ver":
+        plan = sniper.targets()
+        print("Plan: " + (", ".join(f"{t['market_id']} tope {t['cap']:,}" for t in plan) if plan else "vacío"))
+    elif a.accion == "limpiar":
+        sniper.clear(); print("Plan vaciado.")
+    elif a.accion == "ejecutar":
+        c = Client(); lid, _ = c.default_ids()
+        sniper.run(c, lid, dry_run=a.simular)
+    elif a.accion == "cron":
+        c = Client(); lid, _ = c.default_ids()
+        hm = sniper.cycle_utc(c, lid)
+        if not hm:
+            return print("Mercado vacío: no puedo leer la hora del ciclo.")
+        print(f"Tu liga resuelve a las {hm[0]:02d}:{hm[1]:02d} UTC. Línea de crontab (5 min antes):")
+        print("  " + sniper.cron_line(*hm))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="chuleta", description="Trading desk para LALIGA Fantasy")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -273,6 +294,9 @@ def main(argv=None):
     s = sub.add_parser("listar", help="poner a un jugador en venta"); s.add_argument("jugador"); s.add_argument("precio", type=int); s.set_defaults(f=cmd_listar)
     s = sub.add_parser("retirar", help="quitar un anuncio"); s.add_argument("jugador"); s.set_defaults(f=cmd_retirar)
     s = sub.add_parser("acepta", help="aceptar la oferta pendiente por un jugador (irreversible)"); s.add_argument("jugador"); s.add_argument("--si", action="store_true"); s.set_defaults(f=cmd_acepta)
+    s = sub.add_parser("sniper", help="francotirador: armar <marketId> <tope> | ver | limpiar | ejecutar [--simular] | cron")
+    s.add_argument("accion", choices=["armar", "ver", "limpiar", "ejecutar", "cron"]); s.add_argument("market_id", nargs="?"); s.add_argument("tope", nargs="?", type=int)
+    s.add_argument("--simular", action="store_true"); s.set_defaults(f=cmd_sniper)
     s = sub.add_parser("puja", help="pujar u ofertar por un marketId (valor+10 por defecto)"); s.add_argument("market_id"); s.add_argument("dinero", nargs="?", type=int); s.set_defaults(f=cmd_puja)
     a = ap.parse_args(argv)
     try:
