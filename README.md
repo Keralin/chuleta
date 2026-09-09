@@ -1,63 +1,100 @@
 # Chuleta
 
-A trading desk for the official **LALIGA Fantasy** game, from the command line.
-It reads the game's (unofficial) API and futbolfantasy.com and tells you, in
-Spanish and with the data on the table, what to buy, what to sell, who to line
-up and how much cash your rivals really have.
+Una mesa de trading para el **LALIGA Fantasy** oficial, desde la terminal.
+Lee la API del juego (no oficial) y futbolfantasy.com y te dice, con los datos
+sobre la mesa, qué comprar, qué vender, a quién alinear y cuánta caja tienen de
+verdad tus rivales.
 
-Standard library only. Python 3.11+. MIT.
+Solo librería estándar de Python (3.11+). Licencia MIT.
 
-## What it does
+## Qué hace
 
-| Command | What you get |
+| Comando | Qué te da |
 |---|---|
-| `chuleta mercado` | Every player on the market with a four-leg buy filter (value trend on the API's real history, minutes and games, press starting odds, historic points) and hard vetoes: injured or suspended, falling hard, falling with zero minutes (a transfer in progress), press-dropped while fit, transfer or conflict headlines. |
-| `chuleta alinear [--aplicar]` | Best XI and formation by **expected points**: P(plays) x points per game x a fixture factor calibrated on three full seasons (see `research/`). Players who played 60+ minutes last week count as starters even when the press page lags. |
-| `chuleta bajas [club]` | Injured or suspended starters per club and the same-position teammates set to inherit their minutes, with their press odds and whether they are on the market. |
-| `chuleta caja` | Every manager's estimated cash, rebuilt from the public activity feed. |
-| `chuleta clausulas` | Your clause exposure and rivals' clause targets, with days until each unlocks. |
-| `chuleta trading` | Ledger: open positions with P&L, realised sales, your listings and today's machine offers. |
-| `chuleta historial <name>` | Value curve day by day and points per matchday. |
-| `chuleta onces <club>` / `chuleta noticias <club>` | The press's probable XI and typed headlines (injury, transfer, unavailable). |
-| `chuleta listar <name> <price>` / `retirar` / `acepta --si` / `puja <marketId>` | Act. Accepting an offer is irreversible and asks you to confirm with `--si`. |
+| `chuleta mercado` | Todos los jugadores del mercado con el filtro de compra de cuatro patas (tendencia de valor sobre el histórico real de la API, minutos y partidos, probabilidad de titular según la prensa, puntos históricos) y vetos duros: lesionado o sancionado, cayendo fuerte, cayendo sin minutos (traspaso en marcha), descartado por la prensa estando sano, titulares de traspaso o conflicto. |
+| `chuleta alinear [--aplicar]` | Mejor XI y formación por **puntos esperados**: P(juega) x puntos por partido x un factor de rival y casa calibrado con tres temporadas completas (ver `research/`). Un jugador que jugó 60+ minutos la última jornada cuenta como titular aunque la prensa aún no lo haya actualizado. |
+| `chuleta bajas [club]` | Titulares lesionados o sancionados por club y los compañeros de su posición que van a heredar sus minutos, con su probabilidad en la prensa y si están en el mercado. |
+| `chuleta caja` | Caja estimada de cada mánager, reconstruida desde el feed público de actividad. |
+| `chuleta clausulas` | Tu exposición a cláusulas y los objetivos en plantillas rivales, con los días que faltan para que abran. |
+| `chuleta trading` | Cartera con beneficio latente, ventas realizadas, anuncios y ofertas de la máquina de hoy. |
+| `chuleta historial <nombre>` | Curva de valor día a día y puntos por jornada. |
+| `chuleta onces <club>` / `chuleta noticias <club>` | Once probable de la prensa y titulares tipados (lesión, traspaso, no disponible). |
+| `chuleta listar <nombre> <precio>` / `retirar` / `acepta --si` / `puja <marketId>` | Actuar. Aceptar una oferta es irreversible y pide confirmación con `--si`. |
 
-## Quick start
+## Empezar
 
 ```bash
 pip install .
-chuleta login                       # prints a URL; sign in with your Google account
-chuleta login "authredirect://..."  # paste the URL the browser fails to open
+chuleta login                       # imprime una URL; entra con tu cuenta de Google
+chuleta login "authredirect://..."  # pega la URL que el navegador no consigue abrir
 chuleta ligas
 chuleta mercado
 chuleta alinear
 ```
 
-Session and cache live in `~/.chuleta` (override with `CHULETA_HOME`). With
-several leagues, pin one with `CHULETA_LEAGUE=<id>`.
+La sesión y la caché viven en `~/.chuleta` (cámbialo con `CHULETA_HOME`). Si
+tienes varias ligas, fija una con `CHULETA_LEAGUE=<id>`.
 
-## Game mechanics the tool relies on
+## Mecánicas del juego en las que se apoya
 
-Values update daily at 00:15 (Madrid). Auctions and machine offers resolve once
-a day at a time that depends on when YOUR league was created (every league has
-its own cycle; the exact instant is each listing's `expirationDate`). A bid must
-be at least the player's current value. The machine offers 90-110% of value on
-every listing each cycle, whatever you ask. The XI saved before the first match
-of a gameweek scores for the whole gameweek. A clause floors at market value
-while locked; raising it costs 50% of the increment. The maximum bid is cash
-plus 20% of your squad's value, and a negative balance at kick-off scores zero.
+Los valores se actualizan cada día a las 00:15 (Madrid). Las subastas y las
+ofertas de la máquina se resuelven una vez al día a una hora que depende de
+cuándo se creó TU liga (cada liga tiene su ciclo; el instante exacto es el
+`expirationDate` de cada anuncio). Una puja debe ser al menos el valor actual
+del jugador. La máquina ofrece entre el 90% y el 110% del valor por cada anuncio
+en cada ciclo, pidas lo que pidas. El XI guardado antes del primer partido de la
+jornada puntúa toda la jornada. La cláusula tiene como suelo el valor de mercado
+mientras está bloqueada; subirla cuesta el 50% del incremento. La puja máxima es
+la caja más el 20% del valor de la plantilla, y un saldo negativo al empezar la
+jornada puntúa cero. Cada mánager cobra 100.000 € por punto de jornada.
 
-## What the data says
+## Lo que dicen los datos
 
-`research/` holds the scrapers and the findings from three seasons of
-per-player, per-match points (2023/24 to 2025/26): a win is worth 7.1 points
-per starter, a draw 5.1, a loss 2.8; the opponent's goal difference costs ~22%
-per goal; and a cross-team backtest shows the plain long-run average picks a
-better XI than a full fixture adjustment, which is why the lineup model weighs
-fixtures at a quarter of their measured effect. The raw scraped data is not
-redistributed; the scrapers are.
+`research/` guarda los scrapers y las conclusiones de tres temporadas de puntos
+por jugador y partido (2023/24 a 2025/26): ganar vale 7,1 puntos por titular,
+empatar 5,1, perder 2,8; la fuerza del rival cuesta ~22% por gol de diferencia;
+y un backtest cruzado enseña por qué el modelo de alineación pondera el rival a
+un cuarto de su efecto medido. Los datos raspados no se redistribuyen; los
+scrapers sí.
 
-## Acknowledgements
+## Créditos
 
-The idea of driving LALIGA Fantasy from a CLI, and the map of its login and
-endpoints, were first explored in [jonortega20/fantasybot](https://github.com/jonortega20/fantasybot).
-Chuleta is an independent implementation.
+La idea de manejar LALIGA Fantasy desde una CLI, y el mapa de su login y sus
+endpoints, se exploraron primero en [jonortega20/fantasybot](https://github.com/jonortega20/fantasybot).
+Chuleta es una implementación independiente.
+
+---
+
+## English
+
+Chuleta is a command-line trading desk for the official **LALIGA Fantasy**
+game. It reads the game's (unofficial) API and futbolfantasy.com and tells
+you, with the data on the table, what to buy, what to sell, who to line up
+and how much cash your rivals really have. Standard library only, Python
+3.11+, MIT.
+
+- `chuleta mercado`: market screening with a four-leg buy filter (value trend
+  on the API's real history, minutes, press starting odds, historic points) and
+  hard vetoes (injured or suspended, falling hard, falling with zero minutes,
+  press-dropped while fit, transfer or conflict headlines).
+- `chuleta alinear [--aplicar]`: best XI by expected points, P(plays) x points
+  per game x a fixture factor calibrated on three full seasons.
+- `chuleta bajas [club]`: injured or suspended starters and the teammates set
+  to inherit their minutes.
+- `chuleta caja`, `clausulas`, `trading`, `historial`, `onces`, `noticias`:
+  rival cash from the activity feed, clause exposure and targets, ledger, value
+  curves, probable XIs, typed headlines.
+- `chuleta listar` / `retirar` / `acepta --si` / `puja`: act; accepting an
+  offer is irreversible and asks for `--si`.
+
+Quick start: `pip install .`, `chuleta login` (Google sign-in, two steps),
+`chuleta ligas`, `chuleta mercado`. Session and cache live in `~/.chuleta`
+(`CHULETA_HOME`); pin a league with `CHULETA_LEAGUE=<id>`.
+
+Auctions resolve once a day at a time set by your league's creation time (each
+listing's `expirationDate`). A bid must be at least the current value; the
+machine offers 90-110% of value per listing per cycle; the maximum bid is cash
+plus 20% of squad value; a negative balance at kick-off scores zero; every
+manager earns 100,000 EUR per gameweek point. See `research/README.md` for the
+three-season study behind the lineup model. Reports are in Spanish; code and
+comments in English.
