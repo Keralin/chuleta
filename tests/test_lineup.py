@@ -40,5 +40,21 @@ def test_blend_uses_last_season_when_sample_is_short():
     assert 1 < points_per_game(pm) < 10
 
 
+def test_history_takes_priority_over_last_season():
+    """A 3-season blend (`history`) must win over the single-season fallback
+    (`last_season`/`lastSeasonPoints`) when both are available."""
+    pm = {"averagePoints": 10, "points": 10, "lastSeasonPoints": 34}  # -> last_pg = 1.0
+    history = lambda nick, name: 6.0  # a much richer, higher figure
+    blended_with_history = points_per_game(pm, history=history)
+    blended_without = points_per_game(pm)
+    assert blended_with_history > blended_without
+
+
+def test_history_falls_back_to_last_season_when_player_is_absent():
+    pm = {"averagePoints": 10, "points": 10, "lastSeasonPoints": 34}
+    history = lambda nick, name: None  # not found in any of the 3 seasons
+    assert points_per_game(pm, history=history) == points_per_game(pm)
+
+
 def test_fixture_factor_is_neutral_without_data():
     assert fixture_factor({"team": {"id": "1"}, "positionId": 2}, None) == 1.0

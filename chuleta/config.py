@@ -15,6 +15,7 @@ SCOPE = "openid offline_access"
 FF = "https://www.futbolfantasy.com"
 FF_LINEUPS = f"{FF}/laliga/posibles-alineaciones"
 FF_TEAM = f"{FF}/laliga/equipos/{{slug}}"
+FF_SEASON_POINTS = f"{FF}/laliga/estadisticas-puntos/jugador/{{year}}"
 
 USER_AGENT = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")

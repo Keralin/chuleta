@@ -42,20 +42,30 @@ def prob_from_value(value):
     return .12
 
 
-def points_per_game(pm, last_season=None):
+def points_per_game(pm, last_season=None, history=None):
+    """This season's average, blended with points/game from prior seasons
+    while the sample is short (full weight at 4 games). `history` (optional)
+    is `season_points.historical_per_game`: a 3-season weighted blend, tried
+    first since it beats a single season; `last_season` (the legacy single-
+    season lookup) is the fallback for a player absent from all 3 — e.g. a
+    summer arrival from outside LaLiga."""
     avg = float(pm.get("averagePoints") or 0)
     pts = float(pm.get("points") or 0)
     games = round(pts / avg) if avg else 0
-    last = pm.get("lastSeasonPoints")
-    if last is None and last_season is not None:
-        last = last_season(pm.get("nickname", ""), pm.get("name", ""))
-    last_pg = (int(last) if last not in (None, "") else 0) / LAST_SEASON_GAMES
-    if not avg and not last_pg:
+
+    hist_pg = history(pm.get("nickname", ""), pm.get("name", "")) if history else None
+    if hist_pg is None:
+        last = pm.get("lastSeasonPoints")
+        if last is None and last_season is not None:
+            last = last_season(pm.get("nickname", ""), pm.get("name", ""))
+        hist_pg = (int(last) / LAST_SEASON_GAMES) if last not in (None, "", 0) else None
+
+    if not avg and hist_pg is None:
         return prob_from_value(pm.get("marketValue")) * 10
-    if not last_pg:
+    if hist_pg is None:
         return avg
     w = min(games, 4) / 4
-    return w * avg + (1 - w) * last_pg
+    return w * avg + (1 - w) * hist_pg
 
 
 def fixture_factor(pm, form):
@@ -72,7 +82,7 @@ def fixture_factor(pm, form):
     return max(0.4, min(1.8, f))
 
 
-def score_player(player, press, form=None, recent_minutes=None, last_season=None):
+def score_player(player, press, form=None, recent_minutes=None, last_season=None, history=None):
     """(expected points, P(plays) as %, available, tag)."""
     pm = player["playerMaster"]
     info = match_name(pm.get("nickname", ""), pm.get("name", ""), press)
@@ -91,7 +101,7 @@ def score_player(player, press, form=None, recent_minutes=None, last_season=None
         p, tag = max(p, PLAYED_LAST_PROB), "jugó la última"
     if status in DOUBTFUL:
         p, tag = p * DOUBTFUL_DISCOUNT, "duda"
-    exp = p * points_per_game(pm, last_season) * fixture_factor(pm, form)
+    exp = p * points_per_game(pm, last_season, history) * fixture_factor(pm, form)
     return exp, round(p * 100), True, tag
 
 
@@ -104,7 +114,7 @@ def _pick(entries, n):
     return chosen if len(chosen) == n else None
 
 
-def optimize(team, press=None, form=None, recent_minutes=None, last_season=None):
+def optimize(team, press=None, form=None, recent_minutes=None, last_season=None, history=None):
     """Best formation and XI. Returns a dict with lines, total and the payload
     for Client.save_lineup, or raises ValueError if no legal XI exists."""
     if press is None:
@@ -119,7 +129,7 @@ def optimize(team, press=None, form=None, recent_minutes=None, last_season=None)
         pos = int(p["playerMaster"].get("positionId") or 0)
         if pos not in lines:
             continue
-        exp, prob, ok, tag = score_player(p, press, form, recent_minutes, last_season)
+        exp, prob, ok, tag = score_player(p, press, form, recent_minutes, last_season, history)
         lines[pos].append({"id": p.get("playerTeamId"), "nombre": p["playerMaster"].get("nickname"),
                            "score": round(exp, 2), "prob": prob, "disponible": ok, "tag": tag})
     gk = _pick(lines[1], 1)

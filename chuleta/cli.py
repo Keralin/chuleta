@@ -12,6 +12,7 @@ from .api import ApiError, Client, club_of
 from .matching import POS, normalize
 from .sources.clubs import club_names
 from .sources.last_season import last_season_points
+from .sources.season_points import historical_per_game
 from .sources.news import team_news
 from .sources.press import club_lineup
 from .strategy import cash, clauses, lineup, scout, sniper, vacancies
@@ -194,7 +195,8 @@ def cmd_bajas(a):
 
 def cmd_alinear(a):
     c = Client(); lid, tid = c.default_ids(); team = c.team(lid, tid)
-    best = lineup.optimize(team, recent_minutes=lineup.recent_minutes(c, team), last_season=last_season_points)
+    best = lineup.optimize(team, recent_minutes=lineup.recent_minutes(c, team),
+                            last_season=last_season_points, history=historical_per_game)
     if a.json:
         return _json(best)
     d, m, f = best["formation"]
