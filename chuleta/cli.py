@@ -148,8 +148,8 @@ def cmd_caja(a):
     for r in rows:
         tag = f"  (real: {real:,})" if r["manager"] == me else ""
         print(f"{r['manager']:<14}{r['gastado']:>14,}{r['ingresado']:>13,}{r['caja']:>16,}{tag}")
-        for other, amt in r["traspasos"]:
-            print(f"    traspaso con {other}: {amt:,}")
+        for verb, other, amt in r["traspasos"]:
+            print(f"    {verb} {other}: {amt:,}")
     print("\nLas subidas de cláusula no salen en el feed: la caja real es igual o menor.")
 
 
