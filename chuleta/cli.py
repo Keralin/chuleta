@@ -15,7 +15,7 @@ from .sources.last_season import last_season_points
 from .sources.season_points import historical_per_game
 from .sources.news import team_news
 from .sources.press import club_lineup
-from .strategy import cash, clauses, lineup, scout, sniper, vacancies
+from .strategy import cash, clauses, lineup, scout, sniper, trend, vacancies
 
 
 def _json(obj):
@@ -137,6 +137,62 @@ def cmd_trading(a):
         value = int(e["playerMaster"]["marketValue"])
         print(f"  {names.get(pid, pid):<16} pide {e['salePrice']:>11,} valor {value:>11,} | " +
               (", ".join(f"{o['money']:,} ({o['money'] / value * 100:.0f}%, hasta {str(o.get('expirationDate'))[5:16]})" for o in offers) or "sin oferta"))
+
+
+def cmd_valores(a):
+    """Daily value movement of your squad: who rises, who turned, who brakes."""
+    c = Client(); lid, tid = c.default_ids(); team = c.team(lid, tid)
+    rows = []
+    for p in team["players"]:
+        pm = p["playerMaster"]
+        s = trend.summary(c.value_history(pm["id"]))
+        if s:
+            rows.append({"nombre": pm.get("nickname"), "pos": POS.get(int(pm.get("positionId") or 0), "?"), **s})
+    rows.sort(key=lambda r: -r["hoy"])
+    if a.json:
+        return _json(rows)
+    print(f"{'JUGADOR':<18}{'POS':<5}{'VALOR':>13}{'HOY':>13}{'%':>7}{'ACELERA':>11}  RACHA")
+    for r in rows:
+        print(f"{r['nombre'][:17]:<18}{r['pos']:<5}{r['valor']:>13,}{r['hoy']:>+13,}{r['pct']:>+7.1f}"
+              f"{round(r['aceleracion']):>+11,}  {r['sentido']} {r['racha']}d")
+    total = sum(r["valor"] for r in rows); hoy = sum(r["hoy"] for r in rows)
+    print(f"\nplantilla {total:,} ({hoy:+,} hoy) | caja {int(team['teamMoney']):,}")
+
+
+def cmd_rivales(a):
+    """What every manager can spend, what he is short of and what he is selling."""
+    c = Client(); lid, tid = c.default_ids()
+    money = {r["manager"]: r["caja"] for r in cash.estimate(c, lid)}
+    listed = {}
+    for e in c.market(lid):
+        seller = ((e.get("playerTeam") or {}).get("manager") or {}).get("managerName")
+        if seller:
+            listed.setdefault(seller, []).append(e["playerMaster"].get("nickname"))
+    rows = []
+    for r in c.standings(lid):
+        name = r["team"]["manager"]["managerName"]; mine = str(r["team"]["id"]) == str(tid)
+        t = c.team(lid, str(r["team"]["id"]))
+        caja = int(t["teamMoney"]) if mine else money.get(name, 0)
+        value = int(t["teamValue"])
+        squad = {k: 0 for k in ("POR", "DEF", "MED", "DEL")}
+        for p in t["players"]:
+            squad[POS.get(int(p["playerMaster"].get("positionId") or 0), "POR")] += 1
+        rows.append({"manager": name, "yo": mine, "posicion": r.get("position"), "puntos": r.get("points"),
+                     "caja": caja, "valor_equipo": value, "deuda": int(value * 0.2),
+                     "puede_gastar": caja + int(value * 0.2), "plantilla": squad,
+                     "jugadores": len(t["players"]), "en_venta": listed.get(name, [])})
+    rows.sort(key=lambda r: -r["puede_gastar"])
+    if a.json:
+        return _json(rows)
+    print(f"{'MÁNAGER':<14}{'PTS':>5}{'CAJA':>15}{'DEUDA 20%':>13}{'PUEDE GASTAR':>15}{'EQUIPO':>14}  PLANTILLA")
+    for r in rows:
+        s = r["plantilla"]
+        print(f"{r['manager'][:13]:<14}{r['puntos']:>5}{r['caja']:>15,}{r['deuda']:>13,}{r['puede_gastar']:>15,}"
+              f"{r['valor_equipo']:>14,}  {r['jugadores']} ({s['POR']}-{s['DEF']}-{s['MED']}-{s['DEL']})"
+              + ("  <- tú" if r["yo"] else ""))
+        if r["en_venta"]:
+            print(f"    en venta: {', '.join(r['en_venta'])}")
+    print("\nCaja de los rivales estimada del feed público: las subidas de cláusula no salen, así que es un máximo.")
 
 
 def cmd_caja(a):
@@ -290,6 +346,8 @@ def main(argv=None):
     s = sub.add_parser("historial", help="curva de valor y puntos por jornada"); s.add_argument("jugador"); s.add_argument("--dias", type=int, default=10); s.set_defaults(f=cmd_historial)
     sub.add_parser("trading", help="cartera, realizadas y anuncios").set_defaults(f=cmd_trading)
     s = sub.add_parser("caja", help="caja estimada de cada mánager"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_caja)
+    s = sub.add_parser("valores", help="qué sube y qué baja hoy en tu plantilla"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_valores)
+    s = sub.add_parser("rivales", help="caja, tope de gasto y plantilla de cada rival"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_rivales)
     s = sub.add_parser("clausulas", help="riesgo propio y objetivos rivales"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_clausulas)
     s = sub.add_parser("onces", help="once probable de un club (slug futbolfantasy)"); s.add_argument("club"); s.set_defaults(f=cmd_onces)
     s = sub.add_parser("noticias", help="titulares tipados de un club"); s.add_argument("club"); s.add_argument("-n", type=int, default=12); s.set_defaults(f=cmd_noticias)
