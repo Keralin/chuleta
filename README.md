@@ -2,6 +2,8 @@
 
 # Chuleta 📋⚽
 
+<p align="center"><a href="#english">🇬🇧 Read this in English</a></p>
+
 Tu chuleta para el mercado del **LALIGA Fantasy** oficial, desde la terminal.
 Lee la API del juego (no oficial) y futbolfantasy.com y te dice, con los datos
 sobre la mesa, qué comprar, qué vender, a quién alinear y cuánta caja tienen de
@@ -108,6 +110,8 @@ francotirador. Si te gusta esto, pásate también por su repo.
 ---
 
 ## English
+
+<p align="center"><a href="#chuleta-">🇪🇸 Volver a la versión en español</a></p>
 
 Chuleta is a command-line market assistant for the official **LALIGA Fantasy**
 game. It reads the game's (unofficial) API and futbolfantasy.com and tells
