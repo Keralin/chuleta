@@ -18,6 +18,8 @@ Solo librería estándar de Python (3.11+). Licencia MIT.
 | `chuleta mercado` | Todos los jugadores del mercado con el filtro de compra de cuatro patas (tendencia de valor sobre el histórico real de la API, minutos y partidos, probabilidad de titular según la prensa, puntos históricos) y vetos duros: lesionado o sancionado, cayendo fuerte, cayendo sin minutos (traspaso en marcha), descartado por la prensa estando sano, titulares de traspaso o conflicto. |
 | `chuleta alinear [--aplicar]` | Mejor XI y formación por **puntos esperados**: P(juega) x puntos por partido x un factor de rival y casa calibrado con tres temporadas completas (ver `research/`). Un jugador que jugó 60+ minutos la última jornada cuenta como titular aunque la prensa aún no lo haya actualizado. |
 | `chuleta bajas [club]` | Titulares lesionados o sancionados por club y los compañeros de su posición que van a heredar sus minutos, con su probabilidad en la prensa y si están en el mercado. |
+| `chuleta valores` | Qué sube y qué baja hoy en tu plantilla: cambio del día, racha de días en la misma dirección y **aceleración**. Un jugador que sube menos cada día está a punto de girarse, y ese es el momento de anunciarlo. |
+| `chuleta rivales` | Caja, tope de gasto (caja + 20% del valor del equipo), plantilla por posiciones y qué tiene en venta cada mánager. |
 | `chuleta caja` | Caja estimada de cada mánager, reconstruida desde el feed público de actividad. |
 | `chuleta clausulas` | Tu exposición a cláusulas y los objetivos en plantillas rivales, con los días que faltan para que abran. |
 | `chuleta trading` | Cartera con beneficio latente, ventas realizadas, anuncios y ofertas de la máquina de hoy. |
@@ -127,6 +129,11 @@ and how much cash your rivals really have. Standard library only, Python
   per game x a fixture factor calibrated on three full seasons.
 - `chuleta bajas [club]`: injured or suspended starters and the teammates set
   to inherit their minutes.
+- `chuleta valores`: today's value movement across your squad — daily change,
+  how many days it has moved the same way, and whether the daily change is
+  growing or shrinking. A player who rises less every day is about to turn.
+- `chuleta rivales`: each manager's cash, spending ceiling (cash + 20% of squad
+  value), squad by position and what he has listed.
 - `chuleta caja`, `clausulas`, `trading`, `historial`, `onces`, `noticias`:
   rival cash from the activity feed, clause exposure and targets, ledger, value
   curves, probable XIs, typed headlines.
