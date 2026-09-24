@@ -12,6 +12,9 @@ the live market and, in the final seconds, bids:
 Bids are placed on the live market value (never on the stale listing price),
 an existing own bid is modified rather than duplicated, and a rejection keeps
 whatever bid already stands.
+
+Caps are never left round: rivals bid round figures (30M, 36M), and a tie is a
+coin flip we can lose for free, so `arm` nudges a round cap up by a thousand.
 """
 
 import json
@@ -45,9 +48,19 @@ def _save(plan):
         json.dump(plan, f, indent=1)
 
 
+TIE_BREAKER = 1_000   # added to a round cap so a rival's round bid never ties us
+ROUND_TO = 100_000    # what counts as "a round figure" someone else may also bid
+
+
+def unround(cap):
+    """A cap nobody else will match by accident: 36.000.000 -> 36.001.000."""
+    cap = int(cap)
+    return cap + TIE_BREAKER if cap % ROUND_TO == 0 else cap
+
+
 def arm(market_id, cap):
     plan = [t for t in _load() if t["market_id"] != str(market_id)]
-    plan.append({"market_id": str(market_id), "cap": int(cap)})
+    plan.append({"market_id": str(market_id), "cap": unround(cap)})
     _save(plan)
     return plan
 

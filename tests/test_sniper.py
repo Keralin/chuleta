@@ -52,3 +52,16 @@ def test_contested_modifies_own_bid_instead_of_duplicating():
 def test_cron_line_fires_five_minutes_before_the_cycle():
     assert sniper.cron_line(13, 24).startswith("19 13 * * *")
     assert sniper.cron_line(0, 2).startswith("57 23 * * *")
+
+
+def test_round_caps_are_bumped_so_a_rival_never_ties_us():
+    assert sniper.unround(36_000_000) == 36_001_000
+    assert sniper.unround(7_500_000) == 7_501_000
+    assert sniper.unround(36_001_000) == 36_001_000  # already unround, left alone
+    assert sniper.unround(10_442_335) == 10_442_335
+
+
+def test_arm_stores_the_unrounded_cap(tmp_path, monkeypatch):
+    monkeypatch.setattr(sniper, "PLAN", str(tmp_path / "sniper.json"))
+    plan = sniper.arm("77", 15_000_000)
+    assert plan == [{"market_id": "77", "cap": 15_001_000}]
