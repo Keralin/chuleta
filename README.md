@@ -15,7 +15,7 @@ Solo librería estándar de Python (3.11+). Licencia MIT.
 
 | Comando | Qué te da |
 |---|---|
-| `chuleta mercado` | Todos los jugadores del mercado con el filtro de compra de cuatro patas (tendencia de valor sobre el histórico real de la API, minutos y partidos, probabilidad de titular según la prensa, puntos históricos) y vetos duros: lesionado o sancionado, cayendo fuerte, cayendo sin minutos (traspaso en marcha), descartado por la prensa estando sano, titulares de traspaso o conflicto. |
+| `chuleta mercado` | Todos los jugadores del mercado con el filtro de compra de cuatro patas (tendencia de valor sobre el histórico real de la API, minutos y partidos, probabilidad de titular según la prensa, puntos históricos) y vetos duros: lesionado o sancionado, cayendo fuerte, cayendo sin minutos (traspaso en marcha), descartado por la prensa estando sano, titulares de traspaso o conflicto. `PROY%` es el margen de reventa en el horizonte (`--horizon`, 7 días por defecto) valorando la salida al 107,5% del valor, que es la media de las tiradas que aceptas si esperas a una oferta ≥105%. Con `--forced` la valora al 95%, que es lo que te comes si una fecha límite vende por ti. |
 | `chuleta alinear [--aplicar]` | Mejor XI y formación por **puntos esperados**: P(juega) x puntos por partido x un factor de rival y casa calibrado con tres temporadas completas (ver `research/`). Un jugador que jugó 60+ minutos la última jornada cuenta como titular aunque la prensa aún no lo haya actualizado. |
 | `chuleta bajas [club]` | Titulares lesionados o sancionados por club y los compañeros de su posición que van a heredar sus minutos, con su probabilidad en la prensa y si están en el mercado. |
 | `chuleta valores` | Qué sube y qué baja hoy en tu plantilla: cambio del día, racha de días en la misma dirección y **aceleración**. Un jugador que sube menos cada día está a punto de girarse, y ese es el momento de anunciarlo. |
@@ -87,7 +87,10 @@ cuándo se creó TU liga (cada liga tiene su ciclo; el instante exacto es el
 `expirationDate` de cada anuncio). Una puja debe ser al menos el valor actual
 del jugador. La máquina ofrece entre el 90% y el 110% del valor por cada anuncio
 en cada ciclo, pidas lo que pidas. El XI guardado antes del primer partido de la
-jornada puntúa toda la jornada. La cláusula tiene como suelo el valor de mercado
+jornada puntúa toda la jornada. Como la tirada es diaria y uniforme, una sola
+vale el 100% del valor de media y esperar a una ≥105% acierta el 25% de los
+días: un 90% si puedes aguantar ocho. Por eso un flip que puedas vender cuando
+quieras y uno con fecha límite no valen lo mismo. La cláusula tiene como suelo el valor de mercado
 mientras está bloqueada; subirla cuesta el 50% del incremento. La puja máxima es
 la caja más el 20% del valor de la plantilla, y un saldo negativo al empezar la
 jornada puntúa cero. Cada mánager cobra 100.000 € por punto de jornada.
@@ -124,7 +127,9 @@ and how much cash your rivals really have. Standard library only, Python
 - `chuleta mercado`: market screening with a four-leg buy filter (value trend
   on the API's real history, minutes, press starting odds, historic points) and
   hard vetoes (injured or suspended, falling hard, falling with zero minutes,
-  press-dropped while fit, transfer or conflict headlines).
+  press-dropped while fit, transfer or conflict headlines). `PROY%` prices the exit
+  at 107.5% of value — the mean of the rolls you accept if you hold out for an
+  offer >=105% — or at 95% with `--forced`, when a deadline sells for you.
 - `chuleta alinear [--aplicar]`: best XI by expected points, P(plays) x points
   per game x a fixture factor calibrated on three full seasons.
 - `chuleta bajas [club]`: injured or suspended starters and the teammates set

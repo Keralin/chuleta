@@ -32,7 +32,7 @@ def _entry_price(el, value):
     return pt.get("buyoutClause") or max(el.get("salePrice") or 0, value), "CLAUSULA"
 
 
-def study(client, league_id, horizon=7):
+def study(client, league_id, horizon=7, patient=True):
     press = probable_lineups()
     slugs = club_slugs()
     clubs = club_names(client)
@@ -58,7 +58,7 @@ def study(client, league_id, horizon=7):
         status = pm.get("playerStatus")
         rate_pct = rate / value * 100 if value else 0.0
         entry, via = _entry_price(el, value)
-        _, margin_pct = values.margin(entry, value, rate, horizon) if entry else (0, None)
+        _, margin_pct = values.margin(entry, value, rate, horizon, patient) if entry else (0, None)
 
         vetoes = []
         if status != "ok":

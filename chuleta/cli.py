@@ -15,7 +15,7 @@ from .sources.last_season import last_season_points
 from .sources.season_points import historical_per_game
 from .sources.news import team_news
 from .sources.press import club_lineup
-from .strategy import cash, clauses, lineup, scout, sniper, trend, vacancies
+from .strategy import cash, clauses, lineup, scout, sniper, trend, vacancies, values
 
 
 def _json(obj):
@@ -72,7 +72,7 @@ def cmd_plantilla(a):
 # --- analysis --------------------------------------------------------------
 def cmd_mercado(a):
     c = Client(); lid, tid = c.default_ids()
-    rows = scout.study(c, lid, horizon=a.horizon)
+    rows = scout.study(c, lid, horizon=a.horizon, patient=not a.forced)
     if a.json:
         return _json(rows)
     print(f"{'JUGADOR':<16}{'POS':<4}{'EQUIPO':<16}{'VENDE':<11}{'ENTRADA':>11}{'TEND/D':>9}{'PROY%':>7}"
@@ -82,10 +82,15 @@ def cmd_mercado(a):
         prob = f"{r['prob']}%" if r["prob"] is not None else "?"
         marg = f"{r['margen_pct']:+.1f}" if r["margen_pct"] is not None else "?"
         hist = "?" if r["ptos_25_26"] is None else str(r["ptos_25_26"])
-        verdict = "VETO: " + "; ".join(r["vetos"]) if r["vetos"] else ("compra" if (r["margen_pct"] or 0) > 5 else "neutro")
+        verdict = "VETO: " + "; ".join(r["vetos"]) if r["vetos"] else (
+            "compra" if (r["margen_pct"] or 0) >= values.BUY_MARGIN_PCT else "neutro")
         print(f"{r['nombre'][:15]:<16}{r['pos']:<4}{r['equipo'][:15]:<16}{r['vendedor'][:10]:<11}{r['entrada']:>11,}"
               f"{r['tend_dia']:>+9,}{marg:>7}{hist:>6}{r['pj']:>3}{r['minutos']:>5}{r['media']:>6.1f}{prob:>5}  {verdict}")
-    print(f"\ncaja disponible: {c.team(lid, tid)['teamMoney']:,}")
+    salida = "forzada" if a.forced else "esperando oferta >=105%"
+    print(f"\ncaja disponible: {c.team(lid, tid)['teamMoney']:,}"
+          f" | PROY% a {a.horizon}d con salida {salida}"
+          f" ({values.exit_rate(not a.forced) * 100:.1f}% del valor,"
+          f" {values.roll_odds(a.horizon) * 100:.0f}% de ver la tirada en {a.horizon} dias)")
 
 
 def cmd_historial(a):
@@ -342,7 +347,7 @@ def main(argv=None):
     s = sub.add_parser("login", help="iniciar sesión (dos pasos)"); s.add_argument("redirect", nargs="?"); s.set_defaults(f=cmd_login)
     sub.add_parser("ligas", help="tus ligas").set_defaults(f=cmd_ligas)
     s = sub.add_parser("plantilla", help="tu plantilla y caja"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_plantilla)
-    s = sub.add_parser("mercado", help="qué comprar y por qué no el resto"); s.add_argument("--horizon", type=int, default=7); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_mercado)
+    s = sub.add_parser("mercado", help="qué comprar y por qué no el resto"); s.add_argument("--horizon", type=int, default=7); s.add_argument("--forced", action="store_true", help="valorar la salida como venta forzada por fecha límite"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_mercado)
     s = sub.add_parser("historial", help="curva de valor y puntos por jornada"); s.add_argument("jugador"); s.add_argument("--dias", type=int, default=10); s.set_defaults(f=cmd_historial)
     sub.add_parser("trading", help="cartera, realizadas y anuncios").set_defaults(f=cmd_trading)
     s = sub.add_parser("caja", help="caja estimada de cada mánager"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_caja)
