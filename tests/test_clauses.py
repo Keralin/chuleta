@@ -33,3 +33,31 @@ def test_garbage_does_not_crash():
 def test_a_long_window_is_reported_in_days():
     hours = clauses._hours_locked((NOW + timedelta(days=13, hours=2)).isoformat(), NOW)
     assert clauses.opens_in(hours) == "abre en 13.1d"
+
+
+class _FakeClient:
+    def __init__(self, stats):
+        self._stats = stats
+
+    def player(self, player_id):
+        return {"playerStats": self._stats}
+
+
+def stat(week, mins, points):
+    return {"weekNumber": week, "totalPoints": points, "stats": {"mins_played": [mins]}}
+
+
+def test_usage_counts_only_the_games_he_actually_played():
+    pj, mins, ppg = clauses.usage(_FakeClient([
+        stat(1, 90, 6), stat(2, 0, 0), stat(3, 45, 3)]), "1")
+    assert (pj, mins) == (2, 135)
+    assert ppg == 4.5
+
+
+def test_usage_of_a_player_who_never_played():
+    assert clauses.usage(_FakeClient([stat(1, 0, 0)]), "1") == (0, 0, 0.0)
+
+
+def test_usage_ignores_entries_without_a_gameweek():
+    pj, mins, _ = clauses.usage(_FakeClient([stat(1, 90, 6), {"stats": {"mins_played": [90]}}]), "1")
+    assert (pj, mins) == (1, 90)
