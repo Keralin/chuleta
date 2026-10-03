@@ -6,6 +6,7 @@ name spelled out; listings, bids and lineups are reversible and just go."""
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 
 from . import auth
 from .api import ApiError, Client, club_of
@@ -15,7 +16,7 @@ from .sources.last_season import last_season_points
 from .sources.season_points import historical_per_game
 from .sources.news import team_news
 from .sources.press import club_lineup
-from .strategy import cash, clauses, lineup, scout, sniper, trend, vacancies, values
+from .strategy import cash, clauses, lineup, schedule, scout, sniper, trend, vacancies, values
 
 
 def _json(obj):
@@ -180,24 +181,32 @@ def cmd_rivales(a):
         caja = int(t["teamMoney"]) if mine else money.get(name, 0)
         value = int(t["teamValue"])
         squad = {k: 0 for k in ("POR", "DEF", "MED", "DEL")}
+        rate = 0.0
         for p in t["players"]:
-            squad[POS.get(int(p["playerMaster"].get("positionId") or 0), "POR")] += 1
+            pm = p["playerMaster"]
+            squad[POS.get(int(pm.get("positionId") or 0), "POR")] += 1
+            curve = values.curve(c, pm["id"], live=int(pm.get("marketValue") or 0) or None)
+            if curve:
+                rate += curve[1]
         rows.append({"manager": name, "yo": mine, "posicion": r.get("position"), "puntos": r.get("points"),
                      "caja": caja, "valor_equipo": value, "deuda": int(value * 0.2),
-                     "puede_gastar": caja + int(value * 0.2), "plantilla": squad,
+                     "puede_gastar": caja + int(value * 0.2), "plantilla": squad, "valor_dia": round(rate),
                      "jugadores": len(t["players"]), "en_venta": listed.get(name, [])})
     rows.sort(key=lambda r: -r["puede_gastar"])
     if a.json:
         return _json(rows)
-    print(f"{'MÁNAGER':<14}{'PTS':>5}{'CAJA':>15}{'DEUDA 20%':>13}{'PUEDE GASTAR':>15}{'EQUIPO':>14}  PLANTILLA")
+    print(f"{'MÁNAGER':<14}{'PTS':>5}{'CAJA':>15}{'PUEDE GASTAR':>15}{'EQUIPO':>14}{'VALOR/DÍA':>12}{'%':>7}  PLANTILLA")
     for r in rows:
         s = r["plantilla"]
-        print(f"{r['manager'][:13]:<14}{r['puntos']:>5}{r['caja']:>15,}{r['deuda']:>13,}{r['puede_gastar']:>15,}"
-              f"{r['valor_equipo']:>14,}  {r['jugadores']} ({s['POR']}-{s['DEF']}-{s['MED']}-{s['DEL']})"
+        pct = r["valor_dia"] / r["valor_equipo"] * 100 if r["valor_equipo"] else 0.0
+        print(f"{r['manager'][:13]:<14}{r['puntos']:>5}{r['caja']:>15,}{r['puede_gastar']:>15,}"
+              f"{r['valor_equipo']:>14,}{r['valor_dia']:>+12,}{pct:>+7.2f}"
+              f"  {r['jugadores']} ({s['POR']}-{s['DEF']}-{s['MED']}-{s['DEL']})"
               + ("  <- tú" if r["yo"] else ""))
         if r["en_venta"]:
             print(f"    en venta: {', '.join(r['en_venta'])}")
     print("\nCaja de los rivales estimada del feed público: las subidas de cláusula no salen, así que es un máximo.")
+    print("VALOR/DÍA es la suma de la tendencia diaria de cada jugador, y % lo mismo sobre el valor de su plantilla.")
 
 
 def cmd_caja(a):
@@ -220,11 +229,43 @@ def cmd_clausulas(a):
     if a.json:
         return _json(res)
     print("== Riesgo en tu plantilla ==")
+    print(f"  {'JUGADOR':<18}{'POS':<4}{'CLÁUSULA':>12}{'RATIO':>7}{'PJ':>4}{'MIN':>6}{'PTS/P':>7}  CUÁNDO")
     for r in res["mine"]:
-        print(f"  {r['nombre']:<18} {r['pos']} cláusula {r['clausula']:>11,} ratio {r['ratio_hoy']:.2f} -> {r['ratio_al_abrir']:.2f} {r['abre']}{'  a valor: cualquiera puede pagarla' if r['ratio_al_abrir'] <= 1.05 else ''}")
+        reach = "  a valor: cualquiera puede pagarla" if r["ratio_al_abrir"] <= 1.05 else ""
+        print(f"  {r['nombre'][:17]:<18}{r['pos']:<4}{r['clausula']:>12,}"
+              f"{r['ratio_al_abrir']:>7.2f}{r['pj']:>4}{r['minutos']:>6}{r['pts_partido']:>7.1f}"
+              f"  {r['abre']}{reach}")
     print("\n== Objetivos en plantillas rivales ==")
     for r in res["rivals"]:
         print(f"  {r['nombre']:<18} {r['pos']} de {r['manager']:<12} cláusula {r['clausula']:>11,} ratio {r['ratio_al_abrir']:.2f} {r['abre']}")
+
+
+def cmd_calendario(a):
+    """When each gameweek opens, which is when the lineup freezes."""
+    c = Client()
+    now = datetime.now(timezone.utc)
+    week = c.current_week()
+    first_week = int(week.get("weekNumber") or 1)
+    rows = []
+    for w in range(first_week, first_week + a.jornadas):
+        try:
+            first, last, n = schedule.window(c.calendar(w))
+        except ApiError:
+            continue
+        rows.append({"jornada": w, "primero": first, "ultimo": last, "partidos": n,
+                     "congela_en": schedule.until(first, now),
+                     "con_horarios": schedule.scheduled(first, last, n),
+                     "en_curso": bool(week.get("isLive")) and w == first_week})
+    if a.json:
+        return _json(rows)
+    print(f"{'JORNADA':<9}{'CONGELA':>18}{'ÚLTIMO PARTIDO':>18}{'PARTIDOS':>10}  FALTAN")
+    for r in rows:
+        fmt = lambda t: t.astimezone().strftime("%d/%m %H:%M") if t else "?"
+        print(f"J{r['jornada']:<8}{fmt(r['primero']):>18}{fmt(r['ultimo']):>18}{r['partidos']:>10}"
+              f"  {r['congela_en']}" + ("  <- en curso" if r["en_curso"] else "")
+              + ("" if r["con_horarios"] else "  (horarios sin confirmar)"))
+    print("\nLa alineación se congela al empezar el primer partido de la jornada y cuenta para todos sus partidos,")
+    print("incluidos los aplazados. Solo esos 11 puntúan.")
 
 
 def cmd_onces(a):
@@ -354,6 +395,9 @@ def main(argv=None):
     s = sub.add_parser("valores", help="qué sube y qué baja hoy en tu plantilla"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_valores)
     s = sub.add_parser("rivales", help="caja, tope de gasto y plantilla de cada rival"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_rivales)
     s = sub.add_parser("clausulas", help="riesgo propio y objetivos rivales"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_clausulas)
+    s = sub.add_parser("calendario", help="cuándo se congela la alineación de cada jornada")
+    s.add_argument("--jornadas", type=int, default=5); s.add_argument("--json", action="store_true")
+    s.set_defaults(f=cmd_calendario)
     s = sub.add_parser("onces", help="once probable de un club (slug futbolfantasy)"); s.add_argument("club"); s.set_defaults(f=cmd_onces)
     s = sub.add_parser("noticias", help="titulares tipados de un club"); s.add_argument("club"); s.add_argument("-n", type=int, default=12); s.set_defaults(f=cmd_noticias)
     s = sub.add_parser("bajas", help="quién hereda los minutos de un lesionado"); s.add_argument("club", nargs="?"); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_bajas)

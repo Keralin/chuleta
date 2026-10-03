@@ -15,6 +15,19 @@ RISK_RATIO = 1.5   # my player is at risk below this projected ratio
 PREY_RATIO = 1.4   # a rival player is worth hunting below this
 
 
+def _minutes(stat):
+    return int(((stat.get("stats") or {}).get("mins_played") or [0])[0] or 0)
+
+
+def usage(client, player_id):
+    """(games played, minutes, points per game) this season: how much it would
+    hurt to lose him, which the clause ratio alone does not say."""
+    stats = [s for s in (client.player(player_id).get("playerStats") or []) if s.get("weekNumber")]
+    played = [s for s in stats if _minutes(s) > 0]
+    points = sum(s.get("totalPoints") or 0 for s in played)
+    return len(played), sum(_minutes(s) for s in played), (points / len(played) if played else 0.0)
+
+
 def _hours_locked(iso, now):
     if not iso:
         return 0.0
@@ -75,7 +88,13 @@ def analyze(client, league_id, my_team_id):
             if not row:
                 continue
             row["manager"] = manager
-            (mine if tid == str(my_team_id) else rivals).append(row)
-    mine.sort(key=lambda r: r["ratio_al_abrir"])
+            if tid == str(my_team_id):
+                row["pj"], row["minutos"], row["pts_partido"] = usage(client, row["player_id"])
+                mine.append(row)
+            else:
+                rivals.append(row)
+    # the open ones first, and within them the ones that would hurt most: every
+    # clause here sits at value, so the ratio alone cannot rank the risk
+    mine.sort(key=lambda r: (r["horas_protegido"], -r["pts_partido"]))
     rivals.sort(key=lambda r: r["ratio_al_abrir"])
     return {"mine": mine, "rivals": rivals}
