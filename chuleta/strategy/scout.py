@@ -69,7 +69,7 @@ def study(client, league_id, horizon=7, patient=True):
         pm = el.get("playerMaster") or {}
         if not pm.get("id"):
             continue
-        c = values.curve(client, pm["id"])
+        c = values.curve(client, pm["id"], live=int(pm.get("marketValue") or 0) or None)
         value, rate = c if c else (int(pm.get("marketValue") or 0), 0.0)
         games, minutes, avg, last_detail, detail = _season_usage(client, pm["id"])
         info = match_name(pm.get("nickname", ""), pm.get("name", ""), press)

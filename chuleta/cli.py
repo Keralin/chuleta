@@ -150,7 +150,7 @@ def cmd_valores(a):
     rows = []
     for p in team["players"]:
         pm = p["playerMaster"]
-        s = trend.summary(c.value_history(pm["id"]))
+        s = trend.summary(c.value_history(pm["id"]), int(pm.get("marketValue") or 0) or None)
         if s:
             rows.append({"nombre": pm.get("nickname"), "pos": POS.get(int(pm.get("positionId") or 0), "?"), **s})
     rows.sort(key=lambda r: -r["hoy"])
@@ -221,10 +221,10 @@ def cmd_clausulas(a):
         return _json(res)
     print("== Riesgo en tu plantilla ==")
     for r in res["mine"]:
-        print(f"  {r['nombre']:<18} {r['pos']} cláusula {r['clausula']:>11,} ratio {r['ratio_hoy']:.2f} -> {r['ratio_al_abrir']:.2f} al abrir ({r['dias_protegido']}d){'  a valor: cualquiera puede pagarla' if r['ratio_al_abrir'] <= 1.05 else ''}")
+        print(f"  {r['nombre']:<18} {r['pos']} cláusula {r['clausula']:>11,} ratio {r['ratio_hoy']:.2f} -> {r['ratio_al_abrir']:.2f} {r['abre']}{'  a valor: cualquiera puede pagarla' if r['ratio_al_abrir'] <= 1.05 else ''}")
     print("\n== Objetivos en plantillas rivales ==")
     for r in res["rivals"]:
-        print(f"  {r['nombre']:<18} {r['pos']} de {r['manager']:<12} cláusula {r['clausula']:>11,} ratio {r['ratio_al_abrir']:.2f} abre en {r['dias_protegido']}d")
+        print(f"  {r['nombre']:<18} {r['pos']} de {r['manager']:<12} cláusula {r['clausula']:>11,} ratio {r['ratio_al_abrir']:.2f} {r['abre']}")
 
 
 def cmd_onces(a):

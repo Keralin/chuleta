@@ -36,9 +36,18 @@ def acceleration(changes, window=ACCELERATION_WINDOW):
     return (changes[-1] - changes[-window]) / (window - 1)
 
 
-def summary(history):
-    """Everything worth knowing about one player's value, or None without data."""
+def summary(history, live=None):
+    """Everything worth knowing about one player's value, or None without data.
+
+    `live` is the marketValue the API reports right now. The history lands a
+    day late for part of the squad, and without it today's roll reads as
+    yesterday's: the streak, the acceleration and the sort order all shift by
+    a day.
+    """
     values, changes = deltas(history)
+    if live is not None and values and live != values[-1]:
+        changes.append(live - values[-1])
+        values.append(live)
     if len(values) < 2:
         return None
     way, days = streak(changes)

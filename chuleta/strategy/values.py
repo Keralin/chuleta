@@ -26,21 +26,30 @@ def _day(entry):
     return datetime.fromisoformat(str(entry["date"])[:10])
 
 
-def curve(client, player_id, window=7):
-    """(value, daily_rate) over the last `window` days, or None without data."""
+def curve(client, player_id, window=7, live=None):
+    """(value, daily_rate) over the last `window` days, or None without data.
+
+    `live` is the player's marketValue as the API reports it right now. The
+    daily history lands a day late for part of the squad, so reading the value
+    off its last point alone gives yesterday's number and yesterday's rate.
+    When the two disagree the live figure is today's roll and counts as one
+    more day on the curve.
+    """
     try:
         hist = sorted(client.value_history(player_id), key=_day)
     except Exception:
         return None
-    if len(hist) < 2:
-        return None
-    cutoff = _day(hist[-1]) - timedelta(days=window)
-    pts = [h for h in hist if _day(h) >= cutoff]
+    pts = [(_day(h), int(h["marketValue"])) for h in hist]
+    if live is not None and pts and live != pts[-1][1]:
+        pts.append((pts[-1][0] + timedelta(days=1), live))
     if len(pts) < 2:
         return None
-    days = (_day(pts[-1]) - _day(pts[0])).days or 1
-    last = int(pts[-1]["marketValue"])
-    return last, (last - int(pts[0]["marketValue"])) / days
+    cutoff = pts[-1][0] - timedelta(days=window)
+    pts = [p for p in pts if p[0] >= cutoff]
+    if len(pts) < 2:
+        return None
+    days = (pts[-1][0] - pts[0][0]).days or 1
+    return pts[-1][1], (pts[-1][1] - pts[0][1]) / days
 
 
 def project(value, rate, horizon):
