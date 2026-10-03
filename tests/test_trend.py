@@ -36,3 +36,35 @@ def test_summary_reads_a_riser_that_is_braking():
 def test_summary_needs_two_days():
     assert trend.summary(history(10)) is None
     assert trend.summary([]) is None
+
+
+def test_the_live_value_counts_as_today_when_the_history_lags():
+    # the history stops yesterday, the API already reports today's roll
+    s = trend.summary(history(10_000_000, 10_900_000, 11_600_000), live=12_100_000)
+    assert s["valor"] == 12_100_000
+    assert s["hoy"] == 500_000
+    assert s["racha"] == 3
+
+
+def test_a_live_value_equal_to_the_last_point_adds_no_day():
+    s = trend.summary(history(10_000_000, 10_900_000, 11_600_000), live=11_600_000)
+    assert s["valor"] == 11_600_000
+    assert s["hoy"] == 700_000
+    assert s["racha"] == 2
+
+
+def test_without_a_live_value_nothing_changes():
+    assert trend.summary(history(10_000_000, 10_900_000)) == trend.summary(
+        history(10_000_000, 10_900_000), live=None)
+
+
+def test_the_live_value_can_turn_a_rise_into_a_fall():
+    s = trend.summary(history(10_000_000, 10_900_000, 11_600_000), live=11_300_000)
+    assert s["hoy"] == -300_000
+    assert s["sentido"] == "baja"
+    assert s["racha"] == 1
+
+
+def test_one_history_point_plus_the_live_value_is_enough():
+    s = trend.summary(history(10_000_000), live=10_400_000)
+    assert s is not None and s["hoy"] == 400_000
