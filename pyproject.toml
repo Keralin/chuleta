@@ -16,6 +16,9 @@ classifiers = [
   "Topic :: Games/Entertainment",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
 [project.urls]
 Repository = "https://github.com/Keralin/chuleta"
 
