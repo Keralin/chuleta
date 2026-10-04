@@ -48,3 +48,29 @@ def test_only_the_two_freshest_headlines_make_it_in():
     news = [{"fecha": f"2026-10-0{i}", "titular": f"titular {i}"} for i in (1, 2, 3)]
     v = scout.vetoes("ok", 120_000, 1.0, 7, 5.3, press(), news)
     assert v == ["noticia 2026-10-01: titular 1", "noticia 2026-10-02: titular 2"]
+
+
+def test_our_own_injured_player_is_flagged_from_the_api_status():
+    from chuleta import cli
+    assert cli._squad_warning("injured", press()) == "INJURED"
+
+
+def test_our_own_player_is_flagged_when_only_the_press_knows():
+    from chuleta import cli
+    assert cli._squad_warning("ok", press(lesionado=True)) == "prensa: lesionado"
+
+
+def test_a_name_the_press_index_does_not_match_says_nothing():
+    from chuleta import cli
+    assert cli._squad_warning("ok", None) == ""
+    assert cli._squad_warning("ok", press(prob=None)) == ""
+
+
+def test_a_fit_starter_of_ours_gets_no_warning():
+    from chuleta import cli
+    assert cli._squad_warning("ok", press()) == ""
+
+
+def test_both_sources_are_reported_when_both_know():
+    from chuleta import cli
+    assert cli._squad_warning("injured", press(lesionado=True)) == "INJURED, prensa: lesionado"
