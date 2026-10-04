@@ -10,12 +10,12 @@ from datetime import datetime, timezone
 
 from . import auth
 from .api import ApiError, Client, club_of
-from .matching import POS, normalize
+from .matching import POS, match_name, normalize
 from .sources.clubs import club_names
 from .sources.last_season import last_season_points
 from .sources.season_points import historical_per_game
 from .sources.news import team_news
-from .sources.press import club_lineup
+from .sources.press import club_lineup, probable_lineups
 from .strategy import cash, clauses, lineup, schedule, scout, sniper, trend, vacancies, values
 
 
@@ -148,21 +148,44 @@ def cmd_trading(a):
 def cmd_valores(a):
     """Daily value movement of your squad: who rises, who turned, who brakes."""
     c = Client(); lid, tid = c.default_ids(); team = c.team(lid, tid)
+    press = probable_lineups()
     rows = []
     for p in team["players"]:
         pm = p["playerMaster"]
         s = trend.summary(c.value_history(pm["id"]), int(pm.get("marketValue") or 0) or None)
-        if s:
-            rows.append({"nombre": pm.get("nickname"), "pos": POS.get(int(pm.get("positionId") or 0), "?"), **s})
+        if not s:
+            continue
+        info = match_name(pm.get("nickname", ""), pm.get("name", ""), press)
+        rows.append({"nombre": pm.get("nickname"), "pos": POS.get(int(pm.get("positionId") or 0), "?"),
+                     "estado": pm.get("playerStatus"), "prob": (info or {}).get("prob"),
+                     "aviso": _squad_warning(pm.get("playerStatus"), info), **s})
     rows.sort(key=lambda r: -r["hoy"])
     if a.json:
         return _json(rows)
-    print(f"{'JUGADOR':<18}{'POS':<5}{'VALOR':>13}{'HOY':>13}{'%':>7}{'ACELERA':>11}  RACHA")
+    print(f"{'JUGADOR':<18}{'POS':<5}{'VALOR':>13}{'HOY':>13}{'%':>7}{'ACELERA':>11}{'RACHA':>10}  AVISO")
     for r in rows:
         print(f"{r['nombre'][:17]:<18}{r['pos']:<5}{r['valor']:>13,}{r['hoy']:>+13,}{r['pct']:>+7.1f}"
-              f"{round(r['aceleracion']):>+11,}  {r['sentido']} {r['racha']}d")
+              f"{round(r['aceleracion']):>+11,}{r['sentido'] + ' ' + str(r['racha']) + 'd':>10}  {r['aviso']}")
     total = sum(r["valor"] for r in rows); hoy = sum(r["hoy"] for r in rows)
     print(f"\nplantilla {total:,} ({hoy:+,} hoy) | caja {int(team['teamMoney']):,}")
+    hurt = [r for r in rows if r["aviso"]]
+    if hurt:
+        print("aviso: " + " | ".join(f"{r['nombre']} {r['aviso']}" for r in hurt))
+
+
+def _squad_warning(status, info):
+    """Why a player of ours deserves a look today: the API status, or the press
+    when it knows about an injury the API has not registered yet."""
+    out = []
+    if status and status != "ok":
+        out.append(status.upper())
+    if info and info.get("lesionado"):
+        out.append("prensa: lesionado")
+    if info and not info.get("disponible", True):
+        out.append("prensa: no disponible")
+    # a missing press entry is a name that did not match, not a dropped player,
+    # so it says nothing worth a line in a column read every day
+    return ", ".join(out)
 
 
 def cmd_rivales(a):
