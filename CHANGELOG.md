@@ -7,7 +7,6 @@
 
 * blend 3 seasons of historical points into lineup scoring ([1bcffd0](https://github.com/Keralin/chuleta/commit/1bcffd09a6bcbe953153bfd1a5513ab281a07714))
 * rival value rate, clause damage and the gameweek calendar ([a635e2c](https://github.com/Keralin/chuleta/commit/a635e2c303b249ad3028ebc55dac83f5cc492d85))
-* rival value rate, clause damage and the gameweek calendar ([1af2f29](https://github.com/Keralin/chuleta/commit/1af2f29fec12ed87007a83546091a6042b0d6e77))
 * **sniper:** nunca dejar un tope redondo ([62581b1](https://github.com/Keralin/chuleta/commit/62581b189e9ff23c708c1b53497853e5cd77f40e))
 * valores y rivales, los dos informes diarios como comandos ([9e82ca2](https://github.com/Keralin/chuleta/commit/9e82ca2352500a581ba4edc67c06e6bf0e0bc1cd))
 * **valores:** warn about our own injuries in the daily value report ([1864252](https://github.com/Keralin/chuleta/commit/1864252f9b815d56a089eac522f4864d328b86cb))
@@ -17,11 +16,9 @@
 
 * **cash:** count manager-to-manager transfers in the cash estimate ([994f64b](https://github.com/Keralin/chuleta/commit/994f64b26ace9ef03673a70c15ae999461a3918d))
 * **ci:** tag releases v0.2.0, not chuleta-v0.2.0 ([02173bc](https://github.com/Keralin/chuleta/commit/02173bc12e0a0fce1631d6d9f3b3d3c5314ae51f))
-* **ci:** tag releases v0.2.0, not chuleta-v0.2.0 ([87c2c7b](https://github.com/Keralin/chuleta/commit/87c2c7bde0bfdacaeba82ab426f39f9ec1df4832))
 * read today's value from the API and clause windows in hours ([987589b](https://github.com/Keralin/chuleta/commit/987589b6d0924860a5f100df433c156c7dd0d534))
-* read today's value from the API and clause windows in hours ([28acf62](https://github.com/Keralin/chuleta/commit/28acf626a017ac39a86e4034db5d0c04dec61c90))
 * **scout:** veto players the press has injured but the API still calls ok ([a8efe83](https://github.com/Keralin/chuleta/commit/a8efe83bb079f9c44880824e90125767c3ab8d81))
-* **scout:** veto players the press has injured but the API still calls ok ([facbd7b](https://github.com/Keralin/chuleta/commit/facbd7b7eb420e338b7462b0de2b90c2d62a8c1c))
+* **values:** price the exit on the machine's real 90-110% roll ([1ead3b9](https://github.com/Keralin/chuleta/commit/1ead3b9))
 
 
 ### Documentation
