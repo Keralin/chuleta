@@ -1,6 +1,6 @@
 [project]
 name = "chuleta"
-version = "0.1.0"
+version = "0.2.0"
 description = "Market assistant for LALIGA Fantasy: screening with vetoes, expected-points lineups, rival cash, clause radar, sniper"
 readme = "README.md"
 license = { file = "LICENSE" }
