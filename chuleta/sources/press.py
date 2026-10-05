@@ -58,6 +58,28 @@ def probable_lineups(slugs=None):
     return http.cached("press_index", CACHE_TTL, lambda: _index(club_slugs()))
 
 
+def condition(entry, api_status=None):
+    """('out' | 'doubt' | 'fit', reason) from the press entry and the API status.
+
+    The press keeps its injury tag on a player long after he is fit, and its
+    starting odds do not separate the two cases: Luismi Cruz carried the tag at
+    80% while his club had him training apart and ruled him out, and Bellerín
+    carried it at 70% on a day the press expected him to start. Both clubs even
+    announced it in nearly the same words. So the tag is a doubt to resolve by
+    reading the club news, never a status on its own. Only the API status or a
+    suspension makes it an absence.
+    """
+    prob = (entry or {}).get("prob")
+    odds = f"{prob}% de ser titular" if prob is not None else "sin probabilidad"
+    if api_status and api_status != "ok":
+        return "out", f"estado {api_status}"
+    if entry and not entry.get("disponible", True):
+        return "out", "sancionado o no disponible según la prensa"
+    if entry and entry.get("lesionado"):
+        return "doubt", f"la prensa lo marca lesionado ({odds}), sin confirmar"
+    return "fit", ""
+
+
 def club_slug(club_name, slugs):
     """'Deportivo Alavés' -> 'alaves': the slug whose words all appear in the
     name, preferring the one covering the distinctive last word."""

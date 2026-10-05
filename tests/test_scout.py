@@ -6,14 +6,14 @@ def press(prob=80, lesionado=False, disponible=True):
             "prob": prob, "lesionado": lesionado, "disponible": disponible}
 
 
-def test_press_injury_vetoes_a_player_the_api_still_calls_ok():
+def test_an_unresolved_press_doubt_is_enough_to_pass_on_a_buy():
     v = scout.vetoes("ok", 120_000, 1.0, 7, 5.3, press(lesionado=True), [])
-    assert v == ["lesionado según la prensa (la API lo da ok)"]
+    assert v == ["la prensa lo marca lesionado (80% de ser titular), sin confirmar"]
 
 
-def test_press_injury_does_not_repeat_what_the_api_already_said():
+def test_the_api_status_is_reported_once_not_twice():
     v = scout.vetoes("injured", 120_000, 1.0, 7, 5.3, press(lesionado=True), [])
-    assert v == ["estado injured", "lesionado según la prensa"]
+    assert v == ["estado injured"]
 
 
 def test_a_suspended_player_is_vetoed():
@@ -34,9 +34,9 @@ def test_press_lists_him_without_odds_while_fit():
     assert v == ["descartado por la prensa sin lesión (¿conflicto/salida?)"]
 
 
-def test_an_injured_player_without_odds_reads_as_injured_not_as_dropped():
+def test_a_tag_without_odds_reads_as_a_doubt_not_as_dropped_from_the_xi():
     v = scout.vetoes("ok", 120_000, 1.0, 7, 5.3, press(prob=None, lesionado=True), [])
-    assert v == ["lesionado según la prensa (la API lo da ok)"]
+    assert v == ["la prensa lo marca lesionado (sin probabilidad), sin confirmar"]
 
 
 def test_falling_value_and_low_odds_still_veto():
@@ -55,9 +55,10 @@ def test_our_own_injured_player_is_flagged_from_the_api_status():
     assert cli._squad_warning("injured", press()) == "INJURED"
 
 
-def test_our_own_player_is_flagged_when_only_the_press_knows():
+def test_our_own_player_is_a_doubt_when_only_the_press_knows():
     from chuleta import cli
-    assert cli._squad_warning("ok", press(lesionado=True)) == "prensa: lesionado"
+    assert cli._squad_warning("ok", press(lesionado=True)) == (
+        "DUDA: la prensa lo marca lesionado (80% de ser titular), sin confirmar")
 
 
 def test_a_name_the_press_index_does_not_match_says_nothing():
@@ -71,6 +72,6 @@ def test_a_fit_starter_of_ours_gets_no_warning():
     assert cli._squad_warning("ok", press()) == ""
 
 
-def test_both_sources_are_reported_when_both_know():
+def test_the_api_promotes_a_doubt_of_ours_to_an_absence():
     from chuleta import cli
-    assert cli._squad_warning("injured", press(lesionado=True)) == "INJURED, prensa: lesionado"
+    assert cli._squad_warning("injured", press(lesionado=True)) == "INJURED"

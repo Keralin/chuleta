@@ -15,7 +15,7 @@ from .sources.clubs import club_names
 from .sources.last_season import last_season_points
 from .sources.season_points import historical_per_game
 from .sources.news import team_news
-from .sources.press import club_lineup, probable_lineups
+from .sources.press import club_lineup, condition, probable_lineups
 from .strategy import cash, clauses, lineup, schedule, scout, sniper, trend, vacancies, values
 
 
@@ -174,18 +174,15 @@ def cmd_valores(a):
 
 
 def _squad_warning(status, info):
-    """Why a player of ours deserves a look today: the API status, or the press
-    when it knows about an injury the API has not registered yet."""
-    out = []
-    if status and status != "ok":
-        out.append(status.upper())
-    if info and info.get("lesionado"):
-        out.append("prensa: lesionado")
-    if info and not info.get("disponible", True):
-        out.append("prensa: no disponible")
-    # a missing press entry is a name that did not match, not a dropped player,
-    # so it says nothing worth a line in a column read every day
-    return ", ".join(out)
+    """Why a player of ours deserves a look today. Unlike the market side, a
+    press tag here stays a doubt to check: selling one of ours on a stale tag
+    costs real money, so nothing promotes a doubt to an absence but the API."""
+    fitness, reason = condition(info, status)
+    if fitness == "out":
+        return reason.replace("estado ", "").upper() if reason.startswith("estado ") else reason
+    if fitness == "doubt":
+        return f"DUDA: {reason}"
+    return ""
 
 
 def cmd_rivales(a):
@@ -313,9 +310,11 @@ def cmd_bajas(a):
         print(f"\n{r['equipo']}: BAJA {r['baja']} ({r['pos']}, {r['estado']}) media {r['media']:.1f} | {r['ptos']} pts | {r['ptos_25_26'] if r['ptos_25_26'] is not None else '?'} en 25/26")
         for h in r["herederos"]:
             prob = f"{h['prob']}%" if h["prob"] is not None else "?"
+            duda = f"  [{h['duda']}]" if h.get("duda") else ""
             mk = h["mercado"]
             print(f"   hereda: {h['nombre']:<18} prensa {prob:>4} media {h['media']:.1f} ({h['ptos']} pts) 25/26 {h['ptos_25_26']} valor {h['valor']:,}"
-                  + (f" | EN MERCADO ({(mk.get('playerTeam') or {}).get('manager', {}).get('managerName') or 'SISTEMA'})" if mk else ""))
+                  + (f" | EN MERCADO ({(mk.get('playerTeam') or {}).get('manager', {}).get('managerName') or 'SISTEMA'})" if mk else "")
+                  + duda)
 
 
 def cmd_alinear(a):
