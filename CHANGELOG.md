@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1](https://github.com/Keralin/chuleta/compare/v0.2.0...v0.2.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* read the press injury tag as a doubt, not as a status ([#10](https://github.com/Keralin/chuleta/issues/10)) ([3af182d](https://github.com/Keralin/chuleta/commit/3af182dd950f11f9f037ef3cee2f6a3a463b8495))
+
+
+### Documentation
+
+* manual for working on and operating chuleta ([#9](https://github.com/Keralin/chuleta/issues/9)) ([501148d](https://github.com/Keralin/chuleta/commit/501148dce5c0e60aabb746b6d6fd16476d3f0e92))
+
 ## [0.2.0](https://github.com/Keralin/chuleta/compare/v0.1.0...v0.2.0) (2026-10-04)
 
 
