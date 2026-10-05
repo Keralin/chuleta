@@ -8,7 +8,7 @@ out) buys were exactly this pattern, found by hand.
 """
 
 from ..matching import POS, match_name, normalize
-from ..sources.press import probable_lineups
+from ..sources.press import condition, probable_lineups
 from ..sources.last_season import last_season_points
 from ..sources.clubs import club_names
 
@@ -36,8 +36,9 @@ def study(client, league_id, club_filter=None, min_points=10):
         for p in roster:
             info = _press(p, idx)
             status = p.get("playerStatus") or "ok"
-            pressed_out = bool(info) and (info.get("lesionado") or not info.get("disponible", True))
-            if status not in OUT and not pressed_out:
+            # only a real absence frees minutes. An unconfirmed press tag used to
+            # land fit starters here and invent openings that did not exist
+            if condition(info, status)[0] != "out":
                 continue
             pts = p.get("points") or 0
             hist = p.get("lastSeasonPoints")
@@ -50,7 +51,8 @@ def study(client, league_id, club_filter=None, min_points=10):
                 if q is p or str(q.get("positionId")) != pos or (q.get("playerStatus") or "ok") in OUT:
                     continue
                 qi = _press(q, idx)
-                if qi and (qi.get("lesionado") or not qi.get("disponible", True)):
+                qfit, qreason = condition(qi, q.get("playerStatus") or "ok")
+                if qfit == "out":
                     continue
                 qh = q.get("lastSeasonPoints")
                 qh = int(qh) if qh not in (None, "0", 0) else (last_season_points(q.get("nickname", ""), q.get("name", "")) or 0)
@@ -58,12 +60,12 @@ def study(client, league_id, club_filter=None, min_points=10):
                     "nombre": q.get("nickname"), "valor": int(q.get("marketValue") or 0),
                     "prob": qi.get("prob") if qi else None, "media": float(q.get("averagePoints") or 0),
                     "ptos": q.get("points") or 0, "ptos_25_26": qh,
-                    "mercado": listed.get(q["id"]),
+                    "mercado": listed.get(q["id"]), "duda": qreason if qfit == "doubt" else "",
                 })
             heirs.sort(key=lambda h: (-(h["prob"] or 0), -h["media"], -h["ptos_25_26"]))
             out.append({
                 "equipo": club, "baja": p.get("nickname"), "pos": POS.get(int(pos), "?"),
-                "estado": status if status in OUT else "descartado por la prensa",
+                "estado": status if status in OUT else "no disponible según la prensa",
                 "media": float(p.get("averagePoints") or 0), "ptos": pts, "ptos_25_26": hist,
                 "herederos": heirs[:4],
             })

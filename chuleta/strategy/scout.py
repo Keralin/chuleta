@@ -14,7 +14,7 @@ from ..matching import POS, match_name
 from ..sources.clubs import club_names
 from ..sources.last_season import last_season_points
 from ..sources.news import bad_news_for
-from ..sources.press import club_slug, club_slugs, probable_lineups
+from ..sources.press import club_slug, club_slugs, condition, probable_lineups
 from . import values
 
 FALLING_PCT_VETO = -0.5
@@ -31,22 +31,20 @@ def vetoes(status, rate, rate_pct, games, avg, info, news):
     """Hard reasons not to buy. `info` is the press entry for the player, or
     None when the press does not list him."""
     prob = info.get("prob") if info else None
-    injured = bool(info) and bool(info.get("lesionado"))
-    unavailable = bool(info) and not info.get("disponible", True)
+    fitness, reason = condition(info, status)
     out = []
-    if status != "ok":
-        out.append(f"estado {status}")
-    if injured:
-        out.append("lesionado según la prensa" + (" (la API lo da ok)" if status == "ok" else ""))
-    if unavailable:
-        out.append("sancionado o no disponible según la prensa")
+    # buying is where the asymmetry bites: skipping a fit player costs an
+    # opportunity, paying full price for one who will not play costs money and
+    # then bleeds value, so an unresolved doubt is enough to pass
+    if fitness != "fit":
+        out.append(reason)
     if rate_pct <= FALLING_PCT_VETO:
         out.append("cayendo fuerte")
     if rate < 0 and games == 0:
         out.append("cae sin haber jugado (¿traspaso?)")
     if prob is not None and prob < 40 and (avg or 0) < 3:
         out.append(f"titularidad {prob}%")
-    if info and prob is None and not injured and not unavailable:
+    if info and prob is None and fitness == "fit":
         out.append("descartado por la prensa sin lesión (¿conflicto/salida?)")
     for n in news[:2]:
         out.append(f"noticia {n['fecha']}: {n['titular'][:70]}")
