@@ -75,3 +75,22 @@ def test_a_fit_starter_of_ours_gets_no_warning():
 def test_the_api_promotes_a_doubt_of_ours_to_an_absence():
     from chuleta import cli
     assert cli._squad_warning("injured", press(lesionado=True)) == "INJURED"
+
+
+def test_a_system_listing_reports_its_bid_count():
+    el = {"discr": "marketPlayerLeague", "numberOfBids": 2}
+    assert scout.competition(el) == 2
+
+
+def test_a_manager_listing_reports_its_offer_count():
+    el = {"discr": "marketPlayerTeam", "numberOfOffers": 1}
+    assert scout.competition(el) == 1
+
+
+def test_an_untouched_listing_reports_no_competition():
+    assert scout.competition({"discr": "marketPlayerLeague", "numberOfBids": 0}) == 0
+    assert scout.competition({"discr": "marketPlayerTeam", "numberOfOffers": 0}) == 0
+
+
+def test_a_listing_naming_neither_count_is_read_as_untouched():
+    assert scout.competition({"discr": "marketPlayerLeague"}) == 0

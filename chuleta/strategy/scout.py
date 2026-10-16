@@ -58,6 +58,20 @@ def _entry_price(el, value):
     return pt.get("buyoutClause") or max(el.get("salePrice") or 0, value), "CLAUSULA"
 
 
+def competition(el):
+    """How many rivals are already on a listing.
+
+    The market mixes two shapes and each names the count differently: a
+    listing put up by the system carries `numberOfBids`, one put up by a
+    manager carries `numberOfOffers`. Reading only the first reports no
+    competition at all on every player a rival is selling.
+    """
+    for key in ("numberOfBids", "numberOfOffers"):
+        if el.get(key) is not None:
+            return int(el[key])
+    return 0
+
+
 def study(client, league_id, horizon=7, patient=True):
     press = probable_lineups()
     slugs = club_slugs()
@@ -96,7 +110,7 @@ def study(client, league_id, horizon=7, patient=True):
             "equipo": club, "vendedor": (pt.get("manager") or {}).get("managerName", "SISTEMA") if pt else "SISTEMA",
             "via": via, "entrada": entry, "valor": value, "tend_dia": round(rate), "margen_pct": margin_pct,
             "ptos_25_26": hist, "pj": games, "minutos": minutes, "media": float(avg or 0), "prob": prob,
-            "estado": status, "vetos": vets, "market_id": el.get("id"), "pujas": el.get("numberOfBids", 0),
+            "estado": status, "vetos": vets, "market_id": el.get("id"), "pujas": competition(el),
         })
     rows.sort(key=lambda r: (bool(r["vetos"]), -(r["margen_pct"] if r["margen_pct"] is not None else -99)))
     return rows
