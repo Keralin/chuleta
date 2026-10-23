@@ -2,10 +2,11 @@
 
 expected = P(plays) x points per game x fixture factor
 
-P(plays): press odds when available; a player who played 60+ minutes last
-week counts as a likely starter even if the press page (which lags a day)
-omits him; otherwise a guess from market value. Doubtful players are
-discounted; injured and suspended ones never fielded.
+P(plays): press odds when available, read from the player's own page when the
+club page leaves them blank; a player who played 60+ minutes last week counts
+as a likely starter even if the press omits him; otherwise a guess from market
+value. Doubtful players are discounted; injured and suspended ones never
+fielded.
 
 Points per game: this season's average blended with last season's per-game
 figure while the sample is short (full weight at 4 games).
@@ -16,9 +17,9 @@ in research/ shows the full effect over-boosts middling players with soft
 fixtures and drops stars with hard ones; recent form loses to the long average.
 """
 
-from ..matching import match_name
+from ..matching import match_name, normalize
 from ..sources.form import goal_diff_per_game, team_form
-from ..sources.press import probable_lineups
+from ..sources.press import player_odds, probable_lineups
 
 FORMATIONS = [(3, 4, 3), (3, 5, 2), (4, 3, 3), (4, 4, 2), (4, 5, 1), (5, 3, 2), (5, 4, 1)]
 LINE = {1: "goalkeeper", 2: "defender", 3: "midfield", 4: "striker"}
@@ -105,6 +106,21 @@ def score_player(player, press, form=None, recent_minutes=None, last_season=None
     return exp, round(p * 100), True, tag
 
 
+def fill_blank_odds(press, team, lookup=player_odds):
+    """Copy of `press` where squad players listed without odds get them from
+    `lookup(slug)`. Players the press marks unavailable are left alone."""
+    filled = dict(press)
+    for p in team.get("players", []):
+        pm = p["playerMaster"]
+        info = match_name(pm.get("nickname", ""), pm.get("name", ""), press)
+        if not info or info.get("prob") is not None or not info.get("disponible", True):
+            continue
+        odds = lookup(info["slug"])
+        if odds is not None:
+            filled[normalize(info["nombre"])] = {**info, "prob": odds}
+    return filled
+
+
 def _pick(entries, n):
     """Best n available entries of a line; fills with unavailable ones only
     when the line is short, so the XI is always complete and position-legal."""
@@ -118,7 +134,7 @@ def optimize(team, press=None, form=None, recent_minutes=None, last_season=None,
     """Best formation and XI. Returns a dict with lines, total and the payload
     for Client.save_lineup, or raises ValueError if no legal XI exists."""
     if press is None:
-        press = probable_lineups()
+        press = fill_blank_odds(probable_lineups(), team)
         if form is None:
             try:
                 form = team_form()
