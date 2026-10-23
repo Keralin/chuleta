@@ -58,6 +58,29 @@ def probable_lineups(slugs=None):
     return http.cached("press_index", CACHE_TTL, lambda: _index(club_slugs()))
 
 
+_PLAYER_ODDS = re.compile(r"Titular J\d+</strong>.{0,600}?porcentaje-perfil.{0,300}?>\s*(\d{1,3})%\s*<", re.S)
+
+
+def odds_from_player_page(html):
+    """Starting odds from a player's own page ("Titular J10 80%"), or None."""
+    m = _PLAYER_ODDS.search(html or "")
+    return int(m.group(1)) if m else None
+
+
+def player_odds(pslug):
+    """Starting odds from the player's page, cached 30 min; None on any failure.
+
+    The club page leaves some players without a percentage while their own page
+    carries one: Barrios at 80% and Jonathan David at 50% the same afternoon
+    both showed blank on the Atlético page."""
+    try:
+        return http.cached(f"press_player_{pslug}", CACHE_TTL,
+                           lambda: odds_from_player_page(http.get_text(config.FF_PLAYER.format(slug=pslug))))
+    except Exception as e:
+        print(f"[aviso] prensa {pslug}: {e}", file=sys.stderr)
+        return None
+
+
 def condition(entry, api_status=None):
     """('out' | 'doubt' | 'fit', reason) from the press entry and the API status.
 

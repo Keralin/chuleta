@@ -1,4 +1,4 @@
-from chuleta.sources.press import condition
+from chuleta.sources.press import condition, odds_from_player_page
 
 
 def entry(prob=80, lesionado=False, disponible=True):
@@ -44,3 +44,22 @@ def test_no_press_entry_is_not_a_doubt():
 
 def test_the_api_wins_over_a_press_tag_so_the_reason_is_not_doubled():
     assert condition(entry(lesionado=True), "injured") == ("out", "estado injured")
+
+
+PLAYER_PAGE = '''<div class="rs-cuadros-phone" style="text-wrap: nowrap !important;"><strong>Titular J10</strong></div>
+                <div class="porcentaje-perfil pt-md-2 pt-1 my-auto">
+                                        <span class="view probabilidad probabilidad-widgetGr">
+                        <span class="mx-auto prob-3">80%</span>
+                    </span>
+                                    </div>'''
+
+
+def test_player_page_odds_are_read_from_the_titular_box():
+    assert odds_from_player_page(PLAYER_PAGE) == 80
+    assert odds_from_player_page(PLAYER_PAGE.replace("Titular J10", "Titular J11").replace("80%", "50%")) == 50
+
+
+def test_player_page_without_odds_gives_none():
+    assert odds_from_player_page(PLAYER_PAGE.replace("80%", "-")) is None
+    assert odds_from_player_page("") is None
+    assert odds_from_player_page(None) is None

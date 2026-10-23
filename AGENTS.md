@@ -79,6 +79,13 @@ ruled him out, another carried it at 70% and started. `press.condition()`
 returns `out`, `doubt` or `fit` for this, and only the API status or a
 suspension makes an absence.
 
+**The club page drops odds that the player page has.** On the same afternoon
+the club page listed two starters with no percentage while their own pages said
+80% and 50%. Read blank, the first fell to the benched default and the second
+was only kept in by the played-last-week rule. `lineup.optimize()` fills the
+blanks for the squad from `press.player_odds()`, one cached page per player, so
+it never fetches the whole league.
+
 **`mercado`'s daily trend is a seven day average.** A player who turned three
 days ago can still show a positive trend and a buy verdict, and the same number
 drives the falling-value veto, so that safety net goes quiet at the same moment.

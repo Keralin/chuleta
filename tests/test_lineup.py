@@ -1,4 +1,4 @@
-from chuleta.strategy.lineup import optimize, points_per_game, fixture_factor
+from chuleta.strategy.lineup import fill_blank_odds, optimize, points_per_game, fixture_factor, score_player
 
 
 def player(pid, pos, nick, value, avg=None, pts=None, status="ok", last=None, team="1"):
@@ -58,3 +58,31 @@ def test_history_falls_back_to_last_season_when_player_is_absent():
 
 def test_fixture_factor_is_neutral_without_data():
     assert fixture_factor({"team": {"id": "1"}, "positionId": 2}, None) == 1.0
+
+
+def press_entry(nombre, prob, disponible=True):
+    return {"slug": nombre, "nombre": nombre, "equipo": "x", "prob": prob, "lesionado": False, "disponible": disponible}
+
+
+def test_blank_odds_are_filled_from_the_player_page():
+    press = {"fwd0": press_entry("fwd0", None), "fwd1": press_entry("fwd1", 90)}
+    asked = []
+    filled = fill_blank_odds(press, squad(), lookup=lambda slug: asked.append(slug) or 50)
+    assert asked == ["fwd0"]
+    assert filled["fwd0"]["prob"] == 50 and filled["fwd1"]["prob"] == 90
+    assert press["fwd0"]["prob"] is None  # the cached index is not mutated
+
+
+def test_a_filled_player_counts_as_a_press_starter():
+    mid3 = squad()["players"][9]
+    press = {"mid3": press_entry("mid3", None)}
+    _, prob, _, tag = score_player(mid3, press)
+    assert (prob, tag) == (5, "fuera del once")
+    _, prob, _, tag = score_player(mid3, fill_blank_odds(press, squad(), lookup=lambda slug: 80))
+    assert (prob, tag) == (80, "prensa")
+
+
+def test_unavailable_or_failed_lookups_keep_the_blank():
+    press = {"fwd0": press_entry("fwd0", None, disponible=False), "fwd1": press_entry("fwd1", None)}
+    filled = fill_blank_odds(press, squad(), lookup=lambda slug: None)
+    assert filled["fwd0"]["prob"] is None and filled["fwd1"]["prob"] is None
