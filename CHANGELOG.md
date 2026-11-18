@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/Keralin/chuleta/compare/v0.2.1...v0.2.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **alinear:** read blank press odds from the player page ([#13](https://github.com/Keralin/chuleta/issues/13)) ([fff2de3](https://github.com/Keralin/chuleta/commit/fff2de31d40930876360dfaaaafcceace797d759))
+* **mercado:** count offers on listings put up by managers ([#12](https://github.com/Keralin/chuleta/issues/12)) ([d41a9bd](https://github.com/Keralin/chuleta/commit/d41a9bd1d7155dbfb49e3df9f24faad383394bcd))
+
 ## [0.2.1](https://github.com/Keralin/chuleta/compare/v0.2.0...v0.2.1) (2026-10-05)
 
 
