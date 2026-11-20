@@ -116,13 +116,13 @@ def cmd_historial(a):
 def cmd_trading(a):
     c = Client(); lid, tid = c.default_ids(); me = int(c.me()["id"])
     names = {str(p["id"]): p.get("nickname") or p.get("name") for p in c.players()}
-    buys, sells = cash.my_trades(c, lid, me)
+    held, realized = cash.my_trades(c, lid, me)
     team = {str(p["playerMaster"]["id"]): p for p in c.team(lid, tid)["players"]}
     listings = {str(e["playerMaster"]["id"]): e for e in c.market(lid) if (e.get("playerTeam") or {}).get("manager", {}).get("id") == str(me)}
     print("== CARTERA (compradas, sin vender) ==")
     tc = tv = 0
-    for pid, cost in buys.items():
-        if pid in sells or pid not in team:
+    for pid, cost in held.items():
+        if pid not in team:
             continue
         value = int(team[pid]["playerMaster"]["marketValue"]); tc += cost; tv += value
         extra = ""
@@ -134,8 +134,7 @@ def cmd_trading(a):
     if tc:
         print(f"  {'TOTAL':<16} coste {tc:>12,} | vale {tv:>12,} | {tv - tc:>+11,} ({(tv - tc) / tc * 100:+.1f}%)")
     print("\n== REALIZADAS ==")
-    for pid, amount in sells.items():
-        cost = buys.get(pid)
+    for pid, cost, amount in reversed(realized):
         print(f"  {names.get(pid, pid):<16} " + (f"coste {cost:>12,} | venta {amount:>12,} | {amount - cost:>+11,}" if cost else f"plantilla inicial | venta {amount:>12,}"))
     print("\n== ANUNCIOS ==")
     for pid, e in listings.items():
