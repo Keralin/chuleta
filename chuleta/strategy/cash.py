@@ -48,16 +48,19 @@ def estimate(client, league_id, my_team_id=None):
 
 
 def my_trades(client, league_id, my_user_id):
-    """{playerMasterId: amount} for our buys and our sales, from the feed,
-    including transfers with other managers."""
-    buys, sells = {}, {}
-    for a in _feed(client, league_id):
+    """(held, realized) from the feed, including transfers with other managers.
+
+    held: {playerMasterId: cost} for players bought and not sold since.
+    realized: [(playerMasterId, cost or None, sale)] oldest first; cost is None
+    for a player from the starting squad.
+
+    The feed comes newest first, so it is replayed oldest first: a player sold
+    and bought back must pair each sale with its own buy."""
+    held, realized = {}, []
+    for a in reversed(list(_feed(client, league_id))):
         pid, kind = str(a.get("playerMasterId")), a.get("activityTypeId")
-        if a.get("user1Id") == my_user_id:
-            if kind in (BUY, TRANSFER):
-                buys[pid] = a["amount"]
-            elif kind == SALE:
-                sells[pid] = a["amount"]
-        elif kind == TRANSFER and a.get("user2Id") == my_user_id:
-            sells[pid] = a["amount"]
-    return buys, sells
+        if a.get("user1Id") == my_user_id and kind in (BUY, TRANSFER):
+            held[pid] = a["amount"]
+        elif (a.get("user1Id") == my_user_id and kind == SALE) or (kind == TRANSFER and a.get("user2Id") == my_user_id):
+            realized.append((pid, held.pop(pid, None), a["amount"]))
+    return held, realized
