@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/Keralin/chuleta/compare/v0.2.2...v0.2.3) (2026-11-21)
+
+
+### Bug Fixes
+
+* **trading:** pair each sale with its own buy so rebought players show as held ([#15](https://github.com/Keralin/chuleta/issues/15)) ([2106428](https://github.com/Keralin/chuleta/commit/2106428113aaf55108d77f5de7b09b321b997af6))
+
 ## [0.2.2](https://github.com/Keralin/chuleta/compare/v0.2.1...v0.2.2) (2026-10-24)
 
 
