@@ -10,12 +10,13 @@ fit (a player forced out of the XI); a transfer, injury or conflict headline.
 """
 
 from ..api import club_of
-from ..matching import POS, match_name
+from ..matching import POS
 from ..sources.clubs import club_names
 from ..sources.last_season import last_season_points
 from ..sources.news import bad_news_for
-from ..sources.press import club_slug, club_slugs, condition, probable_lineups
+from ..sources.press import club_slug, club_slugs, condition, entry_for, probable_lineups
 from . import values
+from .lineup import fill_blank_odds
 
 FALLING_PCT_VETO = -0.5
 
@@ -72,21 +73,27 @@ def competition(el):
     return 0
 
 
-def study(client, league_id, horizon=7, patient=True):
-    press = probable_lineups()
+def study(client, league_id, horizon=7, patient=True, my_user_id=None):
     slugs = club_slugs()
     clubs = club_names(client)
+    market = client.market(league_id)
+    # the club page leaves odds blank that the player page has; read blank,
+    # a fit starter looks dropped from the XI and gets vetoed
+    press = fill_blank_odds(probable_lineups(), {"players": market}, clubs=clubs)
     rows = []
-    for el in client.market(league_id):
+    for el in market:
         pm = el.get("playerMaster") or {}
         if not pm.get("id"):
             continue
+        seller = ((el.get("playerTeam") or {}).get("manager") or {}).get("id")
+        if my_user_id is not None and str(seller) == str(my_user_id):
+            continue  # our own listing is not something to buy
         c = values.curve(client, pm["id"], live=int(pm.get("marketValue") or 0) or None)
         value, rate = c if c else (int(pm.get("marketValue") or 0), 0.0)
         games, minutes, avg, last_detail, detail = _season_usage(client, pm["id"])
-        info = match_name(pm.get("nickname", ""), pm.get("name", ""), press)
-        prob = info.get("prob") if info else None
         club = club_of(detail if detail.get("team") else pm, clubs)[0]
+        info = entry_for(press, pm.get("nickname", ""), pm.get("name", ""), club)
+        prob = info.get("prob") if info else None
         slug = (info or {}).get("equipo") or club_slug(club, slugs)
         news = []
         if slug:

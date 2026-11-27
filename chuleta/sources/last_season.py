@@ -12,6 +12,7 @@ from ..matching import normalize
 
 from .. import config
 LEGACY_PLAYERS_URL = config.LEGACY_PLAYERS
+_down = False
 CACHE_TTL = 86400  # frozen data: refresh daily out of caution, it never changes
 
 
@@ -32,11 +33,18 @@ def points_index():
     """Dict normalized_name -> total points in 25/26 (cached 24h).
 
     The legacy host goes down now and then (502s); an outage must degrade to
-    "?" in the reports, never kill the screening. Not cached so it retries.
+    "?" in the reports, never kill the screening. The failure is not cached
+    on disk, so the next run tries again.
     """
+    global _down
+    if _down:
+        return {}
     try:
         return http.cached("last_season_points", CACHE_TTL, _fetch)
     except Exception:
+        # one failed fetch per run: retried per player, a dead host kept
+        # `bajas` waiting on back-offs for more than ten minutes
+        _down = True
         return {}
 
 

@@ -5,17 +5,20 @@ name spelled out; listings, bids and lineups are reversible and just go."""
 
 import argparse
 import json
+import os
+import shlex
 import sys
+import urllib.error
 from datetime import datetime, timezone
 
-from . import auth
+from . import auth, config
 from .api import ApiError, Client, club_of
-from .matching import POS, match_name, normalize
+from .matching import POS, normalize
 from .sources.clubs import club_names
 from .sources.last_season import last_season_points
 from .sources.season_points import historical_per_game
 from .sources.news import team_news
-from .sources.press import club_lineup, condition, probable_lineups
+from .sources.press import club_lineup, condition, entry_for, probable_lineups
 from .strategy import cash, clauses, lineup, schedule, scout, sniper, trend, vacancies, values
 
 
@@ -73,7 +76,7 @@ def cmd_plantilla(a):
 # --- analysis --------------------------------------------------------------
 def cmd_mercado(a):
     c = Client(); lid, tid = c.default_ids()
-    rows = scout.study(c, lid, horizon=a.horizon, patient=not a.forced)
+    rows = scout.study(c, lid, horizon=a.horizon, patient=not a.forced, my_user_id=c.me()["id"])
     if a.json:
         return _json(rows)
     print(f"{'JUGADOR':<16}{'POS':<4}{'EQUIPO':<16}{'VENDE':<11}{'ENTRADA':>11}{'TEND/D':>9}{'PROY%':>7}"
@@ -119,6 +122,7 @@ def cmd_trading(a):
     held, realized = cash.my_trades(c, lid, me)
     team = {str(p["playerMaster"]["id"]): p for p in c.team(lid, tid)["players"]}
     listings = {str(e["playerMaster"]["id"]): e for e in c.market(lid) if (e.get("playerTeam") or {}).get("manager", {}).get("id") == str(me)}
+    offers = {pid: c.offers(lid, team[pid]["playerTeamId"]) for pid in listings if pid in team}
     print("== CARTERA (compradas, sin vender) ==")
     tc = tv = 0
     for pid, cost in held.items():
@@ -128,7 +132,7 @@ def cmd_trading(a):
         extra = ""
         if pid in listings:
             extra = f" | en venta a {listings[pid]['salePrice']:,}"
-            for o in c.offers(lid, team[pid]["playerTeamId"]):
+            for o in offers.get(pid, []):
                 extra += f" | oferta {o['money']:,} ({o['money'] / value * 100:.0f}%)"
         print(f"  {names.get(pid, pid):<16} coste {cost:>12,} | vale {value:>12,} | {value - cost:>+11,} ({(value - cost) / cost * 100:+.1f}%){extra}")
     if tc:
@@ -138,10 +142,9 @@ def cmd_trading(a):
         print(f"  {names.get(pid, pid):<16} " + (f"coste {cost:>12,} | venta {amount:>12,} | {amount - cost:>+11,}" if cost else f"plantilla inicial | venta {amount:>12,}"))
     print("\n== ANUNCIOS ==")
     for pid, e in listings.items():
-        offers = c.offers(lid, team[pid]["playerTeamId"]) if pid in team else []
         value = int(e["playerMaster"]["marketValue"])
         print(f"  {names.get(pid, pid):<16} pide {e['salePrice']:>11,} valor {value:>11,} | " +
-              (", ".join(f"{o['money']:,} ({o['money'] / value * 100:.0f}%, hasta {str(o.get('expirationDate'))[5:16]})" for o in offers) or "sin oferta"))
+              (", ".join(f"{o['money']:,} ({o['money'] / value * 100:.0f}%, hasta {str(o.get('expirationDate'))[5:16]})" for o in offers.get(pid, [])) or "sin oferta"))
 
 
 def cmd_valores(a):
@@ -154,7 +157,7 @@ def cmd_valores(a):
         s = trend.summary(c.value_history(pm["id"]), int(pm.get("marketValue") or 0) or None)
         if not s:
             continue
-        info = match_name(pm.get("nickname", ""), pm.get("name", ""), press)
+        info = entry_for(press, pm.get("nickname", ""), pm.get("name", ""), club_of(pm)[0])
         rows.append({"nombre": pm.get("nickname"), "pos": POS.get(int(pm.get("positionId") or 0), "?"),
                      "estado": pm.get("playerStatus"), "prob": (info or {}).get("prob"),
                      "aviso": _squad_warning(pm.get("playerStatus"), info), **s})
@@ -394,11 +397,16 @@ def cmd_sniper(a):
         sniper.run(c, lid, dry_run=a.simular)
     elif a.accion == "cron":
         c = Client(); lid, _ = c.default_ids()
-        hm = sniper.cycle_utc(c, lid)
+        hm = sniper.cycle_local(c, lid)
         if not hm:
             return print("Mercado vacío: no puedo leer la hora del ciclo.")
-        print(f"Tu liga resuelve a las {hm[0]:02d}:{hm[1]:02d} UTC. Línea de crontab (5 min antes):")
-        print("  " + sniper.cron_line(*hm))
+        print(f"Tu liga resuelve a las {hm[0]:02d}:{hm[1]:02d} hora de Madrid. Línea de crontab (5 min antes):")
+        # cron starts with a bare environment and, on a box without pip, no
+        # `chuleta` on the PATH: run this same interpreter from this checkout
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        command = (f"cd {shlex.quote(root)} && CHULETA_LEAGUE={lid} CHULETA_HOME={shlex.quote(config.HOME)} "
+                   f"{shlex.quote(sys.executable)} -u -m chuleta sniper ejecutar")
+        print("  " + sniper.cron_line(*hm, command))
 
 
 def main(argv=None):
@@ -435,6 +443,13 @@ def main(argv=None):
         a.f(a)
     except (ApiError, auth.AuthError) as e:
         print(f"[error] {e}", file=sys.stderr); sys.exit(1)
+    except urllib.error.HTTPError as e:
+        print(f"[error] {e.url} -> {e.code}", file=sys.stderr)
+        sys.exit(1)
+    except (urllib.error.URLError, TimeoutError) as e:
+        print(f"[error] sin respuesta de la API: {getattr(e, 'reason', e)}. Si era una puja, mira en `mercado` si entró.",
+              file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

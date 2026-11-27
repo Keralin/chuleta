@@ -5,7 +5,7 @@ import re
 import sys
 
 from .. import config, http
-from ..matching import normalize
+from ..matching import match_name, normalize
 
 CACHE_TTL = 30 * 60
 
@@ -101,6 +101,19 @@ def condition(entry, api_status=None):
     if entry and entry.get("lesionado"):
         return "doubt", f"la prensa lo marca lesionado ({odds}), sin confirmar"
     return "fit", ""
+
+
+def entry_for(press, nickname, full_name, club):
+    """Press entry of a player of `club` (the API club name), or None.
+
+    Names alone collide across clubs: Real Madrid's Gonzalo took the odds of
+    Elche's Gonzalo Villar, and Barcelona's Ferran those of Celta's Jutglà. So
+    the search stays inside the player's own club, and only a club the press
+    does not know falls back to the whole index."""
+    slug = club_slug(club, {e["equipo"] for e in press.values() if e.get("equipo")}) if club else None
+    if slug:
+        press = {k: v for k, v in press.items() if v.get("equipo") == slug}
+    return match_name(nickname, full_name, press)
 
 
 def club_slug(club_name, slugs):

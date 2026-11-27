@@ -17,9 +17,10 @@ in research/ shows the full effect over-boosts middling players with soft
 fixtures and drops stars with hard ones; recent form loses to the long average.
 """
 
-from ..matching import match_name, normalize
+from ..api import club_of
+from ..matching import normalize
 from ..sources.form import goal_diff_per_game, team_form
-from ..sources.press import player_odds, probable_lineups
+from ..sources.press import entry_for, player_odds, probable_lineups
 
 FORMATIONS = [(3, 4, 3), (3, 5, 2), (4, 3, 3), (4, 4, 2), (4, 5, 1), (5, 3, 2), (5, 4, 1)]
 LINE = {1: "goalkeeper", 2: "defender", 3: "midfield", 4: "striker"}
@@ -86,7 +87,7 @@ def fixture_factor(pm, form):
 def score_player(player, press, form=None, recent_minutes=None, last_season=None, history=None):
     """(expected points, P(plays) as %, available, tag)."""
     pm = player["playerMaster"]
-    info = match_name(pm.get("nickname", ""), pm.get("name", ""), press)
+    info = entry_for(press, pm.get("nickname", ""), pm.get("name", ""), club_of(pm)[0])
     status = (pm.get("playerStatus") or "ok").lower()
     if status in OUT or (info and (info.get("lesionado") or not info.get("disponible", True))):
         return 0.0, 0, False, "baja"
@@ -106,13 +107,13 @@ def score_player(player, press, form=None, recent_minutes=None, last_season=None
     return exp, round(p * 100), True, tag
 
 
-def fill_blank_odds(press, team, lookup=player_odds):
+def fill_blank_odds(press, team, lookup=player_odds, clubs=None):
     """Copy of `press` where squad players listed without odds get them from
     `lookup(slug)`. Players the press marks unavailable are left alone."""
     filled = dict(press)
     for p in team.get("players", []):
-        pm = p["playerMaster"]
-        info = match_name(pm.get("nickname", ""), pm.get("name", ""), press)
+        pm = p.get("playerMaster") or {}
+        info = entry_for(press, pm.get("nickname", ""), pm.get("name", ""), club_of(pm, clubs)[0])
         if not info or info.get("prob") is not None or not info.get("disponible", True):
             continue
         odds = lookup(info["slug"])

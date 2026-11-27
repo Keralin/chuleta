@@ -3,6 +3,7 @@
 import json
 import os
 import time
+import urllib.error
 import urllib.request
 
 from . import config
@@ -15,7 +16,12 @@ def get_text(url, timeout=20, retries=3, headers=None):
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.read().decode("utf-8", "replace")
-        except Exception as e:  # 5xx, timeouts: back off and retry
+        except urllib.error.HTTPError as e:
+            if e.code < 500 and e.code != 429:  # a wrong slug or a gone page will not appear on a retry
+                raise
+            last = e
+            time.sleep(1.5 * (attempt + 1))
+        except Exception as e:  # timeouts, dropped connections: back off and retry
             last = e
             time.sleep(1.5 * (attempt + 1))
     raise last
@@ -33,15 +39,12 @@ def cached(key, ttl, producer):
         if time.time() - os.path.getmtime(path) < ttl:
             with open(path, encoding="utf-8") as f:
                 return json.load(f)
-    except OSError:
+    except (OSError, ValueError):  # missing, or cut short by a crash: rebuild it
         pass
     value = producer()
-    with open(path, "w", encoding="utf-8") as f:
+    # write aside and swap, so a command running at the same time never reads half a file
+    tmp = f"{path}.{os.getpid()}.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(value, f, ensure_ascii=False)
+    os.replace(tmp, path)
     return value
-
-
-def forget(key):
-    path = os.path.join(config.CACHE, "".join(c if c.isalnum() or c in "-_" else "_" for c in key) + ".json")
-    if os.path.exists(path):
-        os.remove(path)

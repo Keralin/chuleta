@@ -15,6 +15,11 @@ import urllib.request
 from . import auth, config
 
 
+# the sniper bids ~15 s before the close: a bid stuck for 30 s would come back
+# after the auction ended, with no time left to retry it
+BID_TIMEOUT = 5
+
+
 class ApiError(Exception):
     pass
 
@@ -24,7 +29,7 @@ class Client:
         self.tokens = auth.load_tokens()
 
     # --- transport -------------------------------------------------------
-    def _call(self, method, path, body=None, retry=True):
+    def _call(self, method, path, body=None, retry=True, timeout=30):
         if auth.expiring(self.tokens):
             self.tokens = auth.refresh(self.tokens)
         data = json.dumps(body).encode() if body is not None else None
@@ -34,23 +39,23 @@ class Client:
             headers["Content-Type"] = "application/json"
         req = urllib.request.Request(config.API + path, data=data, headers=headers, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=30) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 raw = r.read().decode()
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as e:
             if e.code == 401 and retry:
                 self.tokens = auth.refresh(self.tokens)
-                return self._call(method, path, body, retry=False)
+                return self._call(method, path, body, retry=False, timeout=timeout)
             raise ApiError(f"{method} {path} -> {e.code}: {e.read().decode('utf-8', 'replace')[:300]}")
 
     def get(self, path):
         return self._call("GET", path)
 
-    def post(self, path, body=None):
-        return self._call("POST", path, body)
+    def post(self, path, body=None, timeout=30):
+        return self._call("POST", path, body, timeout=timeout)
 
-    def put(self, path, body=None):
-        return self._call("PUT", path, body)
+    def put(self, path, body=None, timeout=30):
+        return self._call("PUT", path, body, timeout=timeout)
 
     def delete(self, path):
         return self._call("DELETE", path)
@@ -114,10 +119,10 @@ class Client:
 
     # --- writes (irreversible ones are marked) -------------------------------
     def bid(self, league_id, market_id, money):
-        return self.post(self.c(f"/league/{league_id}/market/{market_id}/bid?x-lang=es"), {"money": money})
+        return self.post(self.c(f"/league/{league_id}/market/{market_id}/bid?x-lang=es"), {"money": money}, timeout=BID_TIMEOUT)
 
     def modify_bid(self, league_id, market_id, bid_id, money):
-        return self.put(self.c(f"/league/{league_id}/market/{market_id}/bid/{bid_id}?x-lang=es"), {"money": money})
+        return self.put(self.c(f"/league/{league_id}/market/{market_id}/bid/{bid_id}?x-lang=es"), {"money": money}, timeout=BID_TIMEOUT)
 
     def cancel_bid(self, league_id, market_id, bid_id):
         return self.delete(self.c(f"/league/{league_id}/market/{market_id}/bid/{bid_id}/cancel?x-lang=es"))
