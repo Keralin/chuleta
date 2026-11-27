@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/Keralin/chuleta/compare/v0.2.3...v0.2.4) (2026-11-27)
+
+
+### Bug Fixes
+
+* match press odds by club and keep the sniper cron right across DST ([#17](https://github.com/Keralin/chuleta/issues/17)) ([2284155](https://github.com/Keralin/chuleta/commit/2284155b367fde198f1d15db2ae61917ce58559f))
+
 ## [0.2.3](https://github.com/Keralin/chuleta/compare/v0.2.2...v0.2.3) (2026-11-21)
 
 
