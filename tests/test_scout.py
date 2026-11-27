@@ -94,3 +94,57 @@ def test_an_untouched_listing_reports_no_competition():
 
 def test_a_listing_naming_neither_count_is_read_as_untouched():
     assert scout.competition({"discr": "marketPlayerLeague"}) == 0
+
+
+class FakeClient:
+    def __init__(self, market):
+        self._market = market
+
+    def market(self, league_id):
+        return self._market
+
+    def value_history(self, player_id):
+        return []
+
+    def player(self, player_id):
+        return {"playerStats": [{"weekNumber": 1, "stats": {"mins_played": [90]}}],
+                "averagePoints": 5.3, "team": {"name": "Real Betis"}}
+
+
+def test_blank_club_odds_are_read_from_the_player_page_before_vetoing(monkeypatch):
+    from chuleta import http
+    from test_press_condition import PLAYER_PAGE
+
+    blank = {"slug": "pablo-fornals", "nombre": "pablo fornals", "equipo": "betis",
+             "prob": None, "lesionado": False, "disponible": True}
+    monkeypatch.setattr(scout, "probable_lineups", lambda: {"pablo fornals": blank})
+    monkeypatch.setattr(scout, "club_slugs", lambda: ["betis"])
+    monkeypatch.setattr(scout, "club_names", lambda client: {"5": "Real Betis"})
+    monkeypatch.setattr(scout, "bad_news_for", lambda *a: [])
+    monkeypatch.setattr(scout, "last_season_points", lambda *a: None)
+    monkeypatch.setattr(http, "cached", lambda key, ttl, producer: producer())
+    monkeypatch.setattr(http, "get_text", lambda url, **kw: PLAYER_PAGE)
+    market = [{"id": "1", "playerMaster": {"id": "p1", "nickname": "Fornals", "name": "Pablo Fornals Malla",
+                                           "teamId": "5", "positionId": 3, "marketValue": 58_000_000,
+                                           "playerStatus": "ok"}}]
+
+    row = scout.study(FakeClient(market), "league")[0]
+
+    assert row["prob"] == 80
+    assert row["vetos"] == []
+
+
+def test_my_own_listings_are_not_offered_back_to_me(monkeypatch):
+    monkeypatch.setattr(scout, "probable_lineups", lambda: {})
+    monkeypatch.setattr(scout, "club_slugs", lambda: [])
+    monkeypatch.setattr(scout, "club_names", lambda client: {})
+    monkeypatch.setattr(scout, "last_season_points", lambda *a: None)
+    pm = {"id": "p1", "nickname": "Fornals", "name": "Pablo Fornals", "teamId": "5", "positionId": 3,
+          "marketValue": 58_000_000, "playerStatus": "ok"}
+    mine = {"id": "1", "playerMaster": pm, "playerTeam": {"manager": {"id": "42", "managerName": "Keralin"}}}
+    theirs = {"id": "2", "playerMaster": {**pm, "id": "p2", "nickname": "Otro"},
+              "playerTeam": {"manager": {"id": "7", "managerName": "Rival"}}}
+
+    rows = scout.study(FakeClient([mine, theirs]), "league", my_user_id=42)
+
+    assert [r["nombre"] for r in rows] == ["Otro"]

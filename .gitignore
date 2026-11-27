@@ -6,3 +6,5 @@ pkce.json
 research/data/matches_*.json
 research/data/comps.json
 sniper.log
+build/
+*.egg-info/

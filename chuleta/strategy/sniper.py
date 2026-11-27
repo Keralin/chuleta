@@ -22,6 +22,7 @@ import os
 import threading
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from .. import config
 from ..api import ApiError
@@ -31,6 +32,7 @@ FINAL_ALONE = 15
 FINAL_CONTESTED = 60
 POLL = 3
 MAX_READ_ERRORS = 5
+RETRY_FLOOR = 2  # seconds before the close under which a failed bid is not retried
 PLAN = os.path.join(config.STATE, "sniper.json")
 
 
@@ -128,6 +130,15 @@ def snipe(client, league_id, market_id, cap, dry_run=False, log=print, sleep=tim
             except ApiError as e:
                 log(f"[sniper] {name}: bid of {amount:,} rejected ({e}); keeping what stands.")
                 return None
+            except Exception as e:
+                # a timeout may still have landed the bid; the market read on the
+                # next pass shows it as our own and stops before bidding twice
+                if left <= RETRY_FLOOR:
+                    log(f"[sniper] {name}: bid of {amount:,} failed ({str(e)[:80]}) with no time left.")
+                    return None
+                log(f"[sniper] {name}: bid of {amount:,} failed ({str(e)[:80]}); retrying.")
+                sleep(1)
+                continue
             log(f"[sniper] {name}: BID {amount:,} placed (rivals={rivals}, {int(left)}s left)")
             return resp
         if left <= 0:
@@ -151,22 +162,25 @@ def run(client, league_id, dry_run=False, log=print):
         clear()
 
 
-def cycle_utc(client, league_id):
-    """(hour, minute) in UTC at which this league's auctions resolve, read from
-    the listings' expiration times. None if the market is empty."""
+LEAGUE_TZ = "Europe/Madrid"  # the game's clock: a league's cycle keeps its Madrid hour across DST
+
+
+def cycle_local(client, league_id):
+    """(hour, minute) in Madrid time at which this league's auctions resolve,
+    read from the listings' expiration times. None if the market is empty."""
     for e in client.market(league_id):
         try:
-            close = datetime.fromisoformat(e["expirationDate"]).astimezone(timezone.utc)
+            close = datetime.fromisoformat(e["expirationDate"]).astimezone(ZoneInfo(LEAGUE_TZ))
             return close.hour, close.minute
         except (KeyError, TypeError, ValueError):
             continue
     return None
 
 
-def cron_line(hour_utc, minute_utc, lead_minutes=5, command="chuleta sniper ejecutar"):
-    m = minute_utc - lead_minutes
-    h = hour_utc
-    if m < 0:
-        m += 60
-        h = (h - 1) % 24
-    return f"{m} {h} * * * cd $HOME && {command} >> sniper.log 2>&1"
+def cron_line(hour, minute, command, lead_minutes=5):
+    """Crontab entry firing `lead_minutes` before a cycle at `hour:minute`
+    Madrid time. A fixed UTC hour drifts by one when Spain changes clocks and
+    then fires after the auctions closed, so it runs at that minute of every
+    hour and only goes on when Madrid's hour matches."""
+    h, m = divmod((hour * 60 + minute - lead_minutes) % (24 * 60), 60)
+    return f'{m} * * * * [ "$(TZ={LEAGUE_TZ} date +\\%H)" = {h:02d} ] && {command} >> sniper.log 2>&1'

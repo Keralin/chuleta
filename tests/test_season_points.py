@@ -60,3 +60,11 @@ def test_historical_per_game_none_when_absent_everywhere(monkeypatch):
 
     monkeypatch.setattr(season_points, "history_index", lambda: [{}, {}, {}])
     assert historical_per_game("Nadie de Nadie") is None
+
+
+def test_the_completed_seasons_roll_over_in_july():
+    from datetime import date
+    from chuleta.sources.season_points import season_years
+    assert season_years(date(2026, 11, 27)) == (2026, 2025, 2024)
+    assert season_years(date(2027, 3, 1)) == (2026, 2025, 2024)
+    assert season_years(date(2027, 7, 15)) == (2027, 2026, 2025)

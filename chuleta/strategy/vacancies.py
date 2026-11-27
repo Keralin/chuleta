@@ -7,17 +7,16 @@ and historic points. The Zabiri (Andrés Martín out) and Mariano (Toni Martíne
 out) buys were exactly this pattern, found by hand.
 """
 
-from ..matching import POS, match_name, normalize
-from ..sources.press import condition, probable_lineups
+from ..matching import POS, normalize
+from ..sources.press import condition, entry_for, probable_lineups
 from ..sources.last_season import last_season_points
 from ..sources.clubs import club_names
 
 OUT = ("injured", "doubtful", "suspended", "out_of_league")
 
 
-def _press(pm, idx):
-    info = match_name(pm.get("nickname", ""), pm.get("name", ""), idx)
-    return info or {}
+def _press(pm, idx, club):
+    return entry_for(idx, pm.get("nickname", ""), pm.get("name", ""), club) or {}
 
 
 def study(client, league_id, club_filter=None, min_points=10):
@@ -34,7 +33,7 @@ def study(client, league_id, club_filter=None, min_points=10):
         if club_filter and normalize(club_filter) not in normalize(club):
             continue
         for p in roster:
-            info = _press(p, idx)
+            info = _press(p, idx, club)
             status = p.get("playerStatus") or "ok"
             # only a real absence frees minutes. An unconfirmed press tag used to
             # land fit starters here and invent openings that did not exist
@@ -50,7 +49,7 @@ def study(client, league_id, club_filter=None, min_points=10):
             for q in roster:
                 if q is p or str(q.get("positionId")) != pos or (q.get("playerStatus") or "ok") in OUT:
                     continue
-                qi = _press(q, idx)
+                qi = _press(q, idx, club)
                 qfit, qreason = condition(qi, q.get("playerStatus") or "ok")
                 if qfit == "out":
                     continue

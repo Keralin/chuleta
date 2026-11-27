@@ -9,16 +9,20 @@ especially early in a new season when this-year data is still thin.
 """
 
 import re
+from datetime import date
 
 from .. import http, config
 from ..matching import normalize
 
 CACHE_TTL = 7 * 86400  # frozen seasons: a weekly refresh is just caution
 
-# `year` -> the season it represents (year N means season (N-1)/N). Most
-# recent COMPLETED season first; the current season is read live from the
-# official API, never from here.
-SEASON_YEARS = (2026, 2025, 2024)  # 25/26, 24/25, 23/24
+def season_years(today=None):
+    """The last 3 COMPLETED seasons, most recent first, as the year each one
+    ends in (2026 is 25/26). A season ends in June, so it counts from July on.
+    The current season is read live from the official API, never from here."""
+    today = today or date.today()
+    last = today.year if today.month >= 7 else today.year - 1
+    return last, last - 1, last - 2
 
 # Weight given to each season above when blending, most-recent first,
 # renormalized over whichever ones a given player actually has data for.
@@ -65,7 +69,7 @@ def _fetch(year):
 
 def season_points(year):
     """Dict normalized_name -> {'total','games','per_game'} for `year` (one of
-    SEASON_YEARS). Cached a week; degrades to {} on any failure — a dead
+    season_years()). Cached a week; degrades to {} on any failure — a dead
     source must never break scoring, only make it fall back further."""
     try:
         return http.cached(f"season_points_{year}", CACHE_TTL, lambda: _fetch(year))
@@ -74,8 +78,8 @@ def season_points(year):
 
 
 def history_index():
-    """[{season dict}, ...] for SEASON_YEARS, most-recent-first."""
-    return [season_points(y) for y in SEASON_YEARS]
+    """[{season dict}, ...] for the last 3 completed seasons, most-recent-first."""
+    return [season_points(y) for y in season_years()]
 
 
 def historical_per_game(nickname, name=""):

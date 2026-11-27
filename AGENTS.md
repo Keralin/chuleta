@@ -93,9 +93,18 @@ Check the streak and the acceleration from `trend` before believing it.
 
 **There is no global market close time.** Auctions resolve at the hour the
 league was created, so every league rotates at a different minute and nothing
-should hardcode one. `sniper.cycle_utc()` reads it from the `expirationDate` of
-the league's own listings and `sniper.cron_line()` builds the cron entry from
-that, which is why `chuleta sniper cron` exists instead of a constant.
+should hardcode one. `sniper.cycle_local()` reads it in Madrid time from the
+`expirationDate` of the league's own listings and `sniper.cron_line()` builds
+the cron entry from that, which is why `chuleta sniper cron` exists instead of
+a constant. The cycle keeps its Madrid hour when Spain changes clocks, so the
+entry fires every hour at that minute and only goes on when Madrid's hour
+matches: a fixed UTC hour fires an hour late half the year, after the close.
+
+**Press names collide across clubs.** Matching by name alone gave 34 of 882
+players the odds of a namesake at another club (Real Madrid's Gonzalo took
+Elche's Gonzalo Villar at 80%). Look players up with `press.entry_for()`,
+which searches inside the player's own club, never `match_name` on the whole
+index.
 
 **The activity feed is paged newest first, from page 0.** Types: `31` bought
 from the system, `33` sold to the system, `1` a transfer between managers where
